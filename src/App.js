@@ -35,9 +35,9 @@ function App() {
   // Input states
   const [massA, setMassA] = useState(10);
   const [massB, setMassB] = useState(10);
-  const [velocityAX, setVelocityAX] = useState(2);
+  const [velocityAX, setVelocityAX] = useState(5);
   const [velocityAY, setVelocityAY] = useState(0);
-  const [velocityBX, setVelocityBX] = useState(-2);
+  const [velocityBX, setVelocityBX] = useState(-5);
   const [velocityBY, setVelocityBY] = useState(0);
   const [frictionedWalls, setFrictionedWalls] = useState(false);
   const [simulationSpeed, setSimulationSpeedRaw] = useState(1);
@@ -54,9 +54,9 @@ function App() {
   };
   
   const squareARef = useRef({
-    x: 300,
+    x: canvasWidth / 4,
     y: canvasHeight / 2 - getSquareSize(10) / 2,
-    vx: 2,
+    vx: 5,
     vy: 0,
     mass: 10,
     size: getSquareSize(10),
@@ -66,9 +66,9 @@ function App() {
   });
   
   const squareBRef = useRef({
-    x: 800,
+    x: canvasWidth * 3/4 - getSquareSize(10),
     y: canvasHeight / 2 - getSquareSize(10) / 2,
-    vx: -2,
+    vx: -5,
     vy: 0,
     mass: 10,
     size: getSquareSize(10),
@@ -78,8 +78,8 @@ function App() {
   });
   
   // Live velocity display values
-  const [liveVelocityA, setLiveVelocityA] = useState({ x: 2, y: 0, angular: 0 });
-  const [liveVelocityB, setLiveVelocityB] = useState({ x: -2, y: 0, angular: 0 });
+  const [liveVelocityA, setLiveVelocityA] = useState({ x: 5, y: 0, angular: 0 });
+  const [liveVelocityB, setLiveVelocityB] = useState({ x: -5, y: 0, angular: 0 });
   
   // Update positions and rotations
   const updatePositions = () => {
@@ -581,7 +581,7 @@ function App() {
     
     // Reset squares to initial positions with new sizes
     squareARef.current = {
-      x: 300,
+      x: canvasWidth / 4,
       y: posYA,
       vx: Number(velocityAX),
       vy: Number(velocityAY),
@@ -593,7 +593,7 @@ function App() {
     };
     
     squareBRef.current = {
-      x: 800,
+      x: canvasWidth * 3/4 - sizeB,
       y: posYB,
       vx: Number(velocityBX),
       vy: Number(velocityBY),
@@ -771,8 +771,8 @@ function App() {
             {/* Left panel - Square A */}
             <div className="velocity-display blue">
               <h4>Square A (Blue)</h4>
-              <div>Vx: {liveVelocityA.x.toFixed(2)}</div>
-              <div>Vy: {liveVelocityA.y.toFixed(2)}</div>
+              <div>Vx: {liveVelocityA.x.toFixed(5)}</div>
+              <div>Vy: {liveVelocityA.y.toFixed(5)}</div>
               <div>Speed: {calculateSpeed(liveVelocityA.x, liveVelocityA.y)}</div>
               <div>Angular: {liveVelocityA.angular.toFixed(3)} rad/f</div>
               <div>Mass: {massA}</div>
@@ -791,8 +791,8 @@ function App() {
             {/* Right panel - Square B */}
             <div className="velocity-display red">
               <h4>Square B (Red)</h4>
-              <div>Vx: {liveVelocityB.x.toFixed(2)}</div>
-              <div>Vy: {liveVelocityB.y.toFixed(2)}</div>
+              <div>Vx: {liveVelocityB.x.toFixed(5)}</div>
+              <div>Vy: {liveVelocityB.y.toFixed(5)}</div>
               <div>Speed: {calculateSpeed(liveVelocityB.x, liveVelocityB.y)}</div>
               <div>Angular: {liveVelocityB.angular.toFixed(3)} rad/f</div>
               <div>Mass: {massB}</div>
