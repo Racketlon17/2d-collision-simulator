@@ -1,6 +1,78 @@
-# Getting Started with Create React App
+# 2D Square Collision Simulation with Rotation
+
+A physics simulation demonstrating elastic collisions between squares with realistic rotational dynamics. This project visualizes the principles of conservation of momentum, angular momentum, and energy in a 2D environment.
+
+![image](https://github.com/user-attachments/assets/5e41962f-ca1d-4eb2-b985-614f51148a27)
+
+
+## Features
+
+- Real-time collision detection and response
+- Rotational physics with angular momentum
+- Adjustable mass and velocity parameters
+- Optional wall friction simulation
+- Variable simulation speed
+- Live velocity and angular velocity display
+
+## Demo
+
+![collision-demo](https://github.com/user-attachments/assets/2bfe347e-8839-4818-b0b0-9c5cd243ff67)
+
+
+
+## Physics Concepts
+
+This simulation demonstrates several key concepts in classical mechanics:
+- Conservation of linear momentum
+- Conservation of angular momentum
+- Elastic and inelastic collisions
+- Rotational dynamics
+- Friction and energy transfer
+
+## Getting Started
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+
+### Prerequisites
+
+- Node.js and npm installed on your machine
+
+### Installation
+
+1. Clone the repository:
+```
+git clone https://github.com/yourusername/square-collision-simulation.git
+```
+
+2. Navigate to the project directory:
+```
+cd square-collision-simulation
+```
+
+3. Install dependencies:
+```
+npm install
+```
+
+4. Start the development server:
+```
+npm start
+```
+
+5. Open [http://localhost:3000](http://localhost:3000) to view the simulation in your browser.
+
+## Usage
+
+![image](https://github.com/user-attachments/assets/480bd1ce-c206-467e-8620-84cba0ad6182)
+- Adjust the mass and initial velocities of both squares
+
+![image](https://github.com/user-attachments/assets/3605a652-ab6d-4354-9c9b-285f0693cdc0)
+- Toggle friction effects on wall collisions
+- Use the simulation speed slider to slow down or speed up the physics
+
+![image](https://github.com/user-attachments/assets/af301064-aa73-428b-875a-fd4d90aaea90)
+- Press "Start Simulation" to begin
+- Monitor real-time velocity and angular velocity data
 
 ## Available Scripts
 
@@ -11,60 +83,28 @@ In the project directory, you can run:
 Runs the app in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
 ### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Launches the test runner in the interactive watch mode.
 
 ### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Builds the app for production to the `build` folder.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Contributing
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Contributions are welcome! Please check out our [Contributing Guide](CONTRIBUTING.md) for details on how to submit pull requests, report bugs, and suggest enhancements.
 
-### `npm run eject`
+## License
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Acknowledgments
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- Inspired by classical mechanics principles
+- Built with React for performant animation
+- Special thanks to contributors and the physics community
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+---
 
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+*Note: For educational purposes. The simulation makes some simplifications compared to real-world physics.*
