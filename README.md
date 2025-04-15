@@ -41,12 +41,12 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 1. Clone the repository:
 ```
-git clone https://github.com/yourusername/square-collision-simulation.git
+git clone https://github.com/Racketlon17/2d-collision-simulator.git
 ```
 
 2. Navigate to the project directory:
 ```
-cd square-collision-simulation
+cd 2d-collision-simulator
 ```
 
 3. Install dependencies:
