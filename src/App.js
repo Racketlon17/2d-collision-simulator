@@ -284,11 +284,11 @@ function App() {
     } else {
       // With no friction, apply minimal damping only on collision
       if (squareAHitWall) {
-        squareA.angularVelocity *= 0.9999;
+        squareA.angularVelocity *= 0.999999;
       }
       
       if (squareBHitWall) {
-        squareB.angularVelocity *= 0.9999;
+        squareB.angularVelocity *= 0.999999;
       }
     }
   };
@@ -314,51 +314,91 @@ function App() {
       const dy = centerBY - centerAY;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
+      // Normal vector pointing from A to B
       const nx = dx / distance;
       const ny = dy / distance;
       
+      // Relative velocity
       const dvx = squareB.vx - squareA.vx;
       const dvy = squareB.vy - squareA.vy;
       
+      // Velocity along normal
       const velAlongNormal = dvx * nx + dvy * ny;
       
+      // Only resolve if objects are moving toward each other
       if (velAlongNormal > 0) return;
       
-      const e = 1; // Nearly perfectly elastic collision set 0 for inelastic
+      // Coefficient of restitution (elasticity)
+      const e = 1; // Nearly perfectly elastic collision (0 would be inelastic)
+      
+      // Calculate impulse scalar
       const impulseScalar = (-(1 + e) * velAlongNormal) / 
                            (1/squareA.mass + 1/squareB.mass);
       
+      // Apply impulse to linear velocities
       squareA.vx -= (impulseScalar * nx) / squareA.mass;
       squareA.vy -= (impulseScalar * ny) / squareA.mass;
       squareB.vx += (impulseScalar * nx) / squareB.mass;
       squareB.vy += (impulseScalar * ny) / squareB.mass;
       
+      // Calculate moments of inertia
       const inertiaA = calculateMomentOfInertia(squareA.mass, squareA.size);
       const inertiaB = calculateMomentOfInertia(squareB.mass, squareB.size);
       
+      // Tangent vector (perpendicular to normal)
       const perpX = -ny;
       const perpY = nx;
       
+      // Velocity component along tangent
       const tangentialVelocity = dvx * perpX + dvy * perpY;
-
-      //Adjust
-      const rotationFactor = 0.3;
       
-      squareA.angularVelocity += -tangentialVelocity * rotationFactor / Math.sqrt(inertiaA);
-      squareB.angularVelocity += tangentialVelocity * rotationFactor / Math.sqrt(inertiaB);
+      const overlapX = Math.min(squareA.x + squareA.size, squareB.x + squareB.size) - 
+                       Math.max(squareA.x, squareB.x);
+      const overlapY = Math.min(squareA.y + squareA.size, squareB.y + squareB.size) - 
+                       Math.max(squareA.y, squareB.y);
+                       
+      const contactX = Math.max(squareA.x, squareB.x) + overlapX / 2;
+      const contactY = Math.max(squareA.y, squareB.y) + overlapY / 2;
       
+      // Calculate r vectors (from center to contact point)
+      const rAx = contactX - centerAX;
+      const rAy = contactY - centerAY;
+      const rBx = contactX - centerBX;
+      const rBy = contactY - centerBY;
+      
+      // Calculate torque impulses
+      const torqueImpulseA = (rAx * (-impulseScalar * ny) - rAy * (-impulseScalar * nx));
+      const torqueImpulseB = (rBx * (impulseScalar * ny) - rBy * (impulseScalar * nx));
+      
+      // Apply angular velocity changes based on torque and inertia
+      squareA.angularVelocity += torqueImpulseA / inertiaA;
+      squareB.angularVelocity += torqueImpulseB / inertiaB;
+      
+      const frictionCoeff = 0.2;
+      squareA.angularVelocity += -tangentialVelocity * frictionCoeff * 
+                                Math.sqrt(squareA.mass) / inertiaA;
+      squareB.angularVelocity += tangentialVelocity * frictionCoeff * 
+                                Math.sqrt(squareB.mass) / inertiaB;
+      
+      // Position correction to prevent sinking
       const penetrationDepth = (squareA.size/2 + squareB.size/2) - distance;
       if (penetrationDepth > 0) {
-        const percent = 0.4;
-        const correction = (penetrationDepth / distance) * percent;
+        // Position correction proportional to mass (lighter objects move more)
+        const percent = 0.4; // Correction percentage
+        const correctionRatio = percent * penetrationDepth / distance;
         
-        const correctionX = nx * correction;
-        const correctionY = ny * correction;
+        // Weight correction by inverse mass
+        const totalMass = squareA.mass + squareB.mass;
+        const ratioA = squareB.mass / totalMass;
+        const ratioB = squareA.mass / totalMass;
         
-        squareA.x -= correctionX * 0.5;
-        squareA.y -= correctionY * 0.5;
-        squareB.x += correctionX * 0.5;
-        squareB.y += correctionY * 0.5;
+        const correctionX = nx * correctionRatio;
+        const correctionY = ny * correctionRatio;
+        
+        squareA.x -= correctionX * ratioA;
+        squareA.y -= correctionY * ratioA;
+        squareB.x += correctionX * ratioB;
+        squareB.y += correctionY * ratioB;
       }
     }
   };
@@ -546,7 +586,7 @@ function App() {
     setIsRunning(true);
   };
   
-  // Improved stop function
+  // Stop function
   const stopSimulation = () => {
     // Set the flag to stop animation
     setIsRunning(false);
