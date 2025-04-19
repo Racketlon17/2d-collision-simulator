@@ -245,7 +245,6 @@ input:checked + .slider:before {
   position: relative;
 }
 
-/* Professional slider style */
 .speed-slider {
   -webkit-appearance: none;
   appearance: none;
@@ -544,4 +543,82 @@ button {
 canvas {
   will-change: transform;
   transform: translateZ(0);
+}
+
+.momentum-display {
+  width: 100%;
+  max-width: 800px;
+  margin: 15px auto;
+  padding: 15px;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(5px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.momentum-display h3 {
+  text-align: center;
+  margin: 0 0 15px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #38bdf8;
+}
+
+.momentum-table {
+  width: 100%;
+  color: #f1f5f9;
+  border-collapse: collapse;
+  display: table;
+  font-size: 14px;
+  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+}
+
+.momentum-header {
+  display: table-row;
+  font-weight: 600;
+  background-color: rgba(30, 41, 59, 0.7);
+  letter-spacing: 0.5px;
+}
+
+.momentum-row {
+  display: table-row;
+}
+
+.momentum-row:nth-child(even) {
+  background-color: rgba(30, 41, 59, 0.3);
+}
+
+.momentum-cell {
+  display: table-cell;
+  padding: 6px 10px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.momentum-cell:first-child {
+  text-align: left;
+  font-weight: 500;
+  width: 35%;
+}
+
+.total-row {
+  font-weight: 600;
+  background-color: rgba(30, 41, 59, 0.7) !important;
+}
+
+.total-row .momentum-cell {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  color: #f8fafc;
+}
+
+.blue-text {
+  color: #4285F4;
+}
+
+.red-text {
+  color: #EA4335;
 }

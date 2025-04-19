@@ -44,6 +44,16 @@ function App() {
   const debouncedSimulationSpeed = useDebounce(simulationSpeed, 50);
   const [isCanvasVisible, setIsCanvasVisible] = useState(true);
 
+  // Momentum tracking states
+  const [momentumBeforeA, setMomentumBeforeA] = useState({ x: 0, y: 0, total: 0 });
+  const [momentumBeforeB, setMomentumBeforeB] = useState({ x: 0, y: 0, total: 0 });
+  const [momentumAfterA, setMomentumAfterA] = useState({ x: 0, y: 0, total: 0 });
+  const [momentumAfterB, setMomentumAfterB] = useState({ x: 0, y: 0, total: 0 });
+  const [totalMomentumBefore, setTotalMomentumBefore] = useState(0);
+  const [totalMomentumAfter, setTotalMomentumAfter] = useState(0);
+  const [collisionCount, setCollisionCount] = useState(0);
+  const lastCollisionTimeRef = useRef(0);
+  
   const setSimulationSpeed = (newSpeed) => {
     setSimulationSpeedRaw(parseFloat(newSpeed));
   };
@@ -80,6 +90,19 @@ function App() {
   // Live velocity display values
   const [liveVelocityA, setLiveVelocityA] = useState({ x: 5, y: 0, angular: 0 });
   const [liveVelocityB, setLiveVelocityB] = useState({ x: -5, y: 0, angular: 0 });
+  
+  // Calculate momentum for a square
+  const calculateMomentum = (square) => {
+    const px = square.mass * square.vx;
+    const py = square.mass * square.vy;
+    const totalMomentum = Math.sqrt(px * px + py * py);
+    
+    return {
+      x: px,
+      y: py,
+      total: totalMomentum
+    };
+  };
   
   // Update positions and rotations
   const updatePositions = () => {
@@ -310,6 +333,20 @@ function App() {
       squareA.y < squareB.y + squareB.size &&
       squareA.y + squareA.size > squareB.y
     ) {
+      const currentTime = performance.now();
+      if (currentTime - lastCollisionTimeRef.current < 50) {
+        return;
+      }
+      
+      // Calculate momentum before collision
+      const momentumA = calculateMomentum(squareA);
+      const momentumB = calculateMomentum(squareB);
+      
+      // Save momentum before collision
+      setMomentumBeforeA(momentumA);
+      setMomentumBeforeB(momentumB);
+      setTotalMomentumBefore(momentumA.total + momentumB.total);
+      
       const dx = centerBX - centerAX;
       const dy = centerBY - centerAY;
       const distance = Math.sqrt(dx * dx + dy * dy);
@@ -328,12 +365,11 @@ function App() {
       // Only resolve if objects are moving toward each other
       if (velAlongNormal > 0) return;
       
-      // Coefficient of restitution (elasticity)
+      // Coefficient of restitution
       const e = 1; // Nearly perfectly elastic collision (0 would be inelastic)
       
       // Calculate impulse scalar
-      const impulseScalar = (-(1 + e) * velAlongNormal) / 
-                           (1/squareA.mass + 1/squareB.mass);
+      const impulseScalar = (-(1 + e) * velAlongNormal) / (1/squareA.mass + 1/squareB.mass);
       
       // Apply impulse to linear velocities
       squareA.vx -= (impulseScalar * nx) / squareA.mass;
@@ -383,8 +419,8 @@ function App() {
       // Position correction to prevent sinking
       const penetrationDepth = (squareA.size/2 + squareB.size/2) - distance;
       if (penetrationDepth > 0) {
-        // Position correction proportional to mass (lighter objects move more)
-        const percent = 0.4; // Correction percentage
+        // Correction percent 
+        const percent = 0.4;
         const correctionRatio = percent * penetrationDepth / distance;
         
         // Weight correction by inverse mass
@@ -400,6 +436,19 @@ function App() {
         squareB.x += correctionX * ratioB;
         squareB.y += correctionY * ratioB;
       }
+      
+      // Calculate momentum after collision
+      const postMomentumA = calculateMomentum(squareA);
+      const postMomentumB = calculateMomentum(squareB);
+      
+      // Save momentum after collision
+      setMomentumAfterA(postMomentumA);
+      setMomentumAfterB(postMomentumB);
+      setTotalMomentumAfter(postMomentumA.total + postMomentumB.total);
+      
+      setCollisionCount(prevCount => prevCount + 1);
+      
+      lastCollisionTimeRef.current = currentTime;
     }
   };
   
@@ -502,9 +551,7 @@ function App() {
     
     
     if (canvasRef.current) {
-      // Use cached context for better performance
       if (!canvasRef.current.ctx) {
-        // Create context with alpha:false for better performance
         canvasRef.current.ctx = canvasRef.current.getContext('2d', { alpha: false });
       }
       const ctx = canvasRef.current.ctx;
@@ -519,10 +566,9 @@ function App() {
       drawRotatedSquare(ctx, squareA);
       drawRotatedSquare(ctx, squareB);
       
-      // Debug indicator showing if we're running at full speed
       if (!isCanvasVisible) {
         ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-        ctx.fillRect(0, 0, 20, 20); // Red indicator in corner when not visible
+        ctx.fillRect(0, 0, 20, 20);
       }
     }
     
@@ -530,7 +576,6 @@ function App() {
       if (isCanvasVisible) {
         requestRef.current.id = window.requestAnimationFrame(animate);
       } else {
-        // When not visible, use setTimeout with fixed rate to bypass throttling
         clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => {
           if (isRunning) {
@@ -544,11 +589,9 @@ function App() {
   const startSimulation = () => {
     console.log("Starting simulation");
     
-    // Calculate sizes based on current mass values
     const sizeA = getSquareSize(Number(massA));
     const sizeB = getSquareSize(Number(massB));
     
-    // Update square values from inputs
     squareARef.current.vx = Number(velocityAX);
     squareARef.current.vy = Number(velocityAY);
     squareARef.current.mass = Number(massA);
@@ -576,7 +619,20 @@ function App() {
       angular: 0
     });
     
-    // Reset frame time tracking
+    // Initialize momentum values
+    const momentumA = calculateMomentum(squareARef.current);
+    const momentumB = calculateMomentum(squareBRef.current);
+    
+    setMomentumBeforeA(momentumA);
+    setMomentumBeforeB(momentumB);
+    setMomentumAfterA(momentumA);
+    setMomentumAfterB(momentumB);
+    setTotalMomentumBefore(momentumA.total + momentumB.total);
+    setTotalMomentumAfter(momentumA.total + momentumB.total);
+    
+    setCollisionCount(0);
+    lastCollisionTimeRef.current = 0;
+    
     frameTimeRef.current = {
       lastFrameTime: performance.now(),
       frameTimes: []
@@ -588,16 +644,13 @@ function App() {
   
   // Stop function
   const stopSimulation = () => {
-    // Set the flag to stop animation
     setIsRunning(false);
     
-    // Cancel any existing animation frame immediately
     if (requestRef.current && requestRef.current.id) {
       cancelAnimationFrame(requestRef.current.id);
       requestRef.current = null;
     }
     
-    // Explicitly clear any pending timeouts
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -606,7 +659,6 @@ function App() {
   
   // Reset simulation
   const resetSimulation = useCallback(() => {
-    // Cancel any existing animation
     if (requestRef.current) {
       cancelAnimationFrame(requestRef.current);
     }
@@ -615,11 +667,9 @@ function App() {
     const sizeA = getSquareSize(Number(massA));
     const sizeB = getSquareSize(Number(massB));
     
-    // Position squares at center-left and center-right of canvas, adjusted for size
     const posYA = canvasHeight / 2 - sizeA / 2;
     const posYB = canvasHeight / 2 - sizeB / 2;
     
-    // Reset squares to initial positions with new sizes
     squareARef.current = {
       x: canvasWidth / 4,
       y: posYA,
@@ -657,6 +707,21 @@ function App() {
       angular: 0
     });
     
+    // Initialize momentum values
+    const momentumA = calculateMomentum(squareARef.current);
+    const momentumB = calculateMomentum(squareBRef.current);
+    
+    setMomentumBeforeA(momentumA);
+    setMomentumBeforeB(momentumB);
+    setMomentumAfterA(momentumA);
+    setMomentumAfterB(momentumB);
+    setTotalMomentumBefore(momentumA.total + momentumB.total);
+    setTotalMomentumAfter(momentumA.total + momentumB.total);
+    
+    // Reset collision count
+    setCollisionCount(0);
+    lastCollisionTimeRef.current = 0;
+    
     // Redraw squares
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext('2d');
@@ -670,7 +735,7 @@ function App() {
       ctx.fillStyle = '#EA4335';
       ctx.fillRect(800, posYB, sizeB, sizeB);
     }
-  }, [velocityAX, velocityAY, velocityBX, velocityBY, massA, massB]);
+  }, [velocityAX, velocityAY, velocityBX, velocityBY, massA, massB, canvasWidth, canvasHeight]);
   
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -690,12 +755,11 @@ function App() {
         }
       },
       { 
-        threshold: [0, 0.1, 0.5, 1.0], // Check at different visibility thresholds
+        threshold: [0, 0.1, 0.5, 1.0],
         rootMargin: "100px"
       }
     );
     
-    // Start observing the canvas
     observer.observe(canvas);
     
     const handleScroll = () => {
@@ -708,10 +772,8 @@ function App() {
       }
     };
     
-    // Add scroll listener
     window.addEventListener('scroll', handleScroll);
     
-    // Cleanup function
     return () => {
       if (canvas) {
         observer.unobserve(canvas);
@@ -723,7 +785,7 @@ function App() {
   // Modified useEffect for animation
   useEffect(() => {
     if (isRunning) {
-      // Initialize timestamp tracking object
+
       requestRef.current = {
         id: requestAnimationFrame(animate),
         timestamp: performance.now(),
@@ -760,9 +822,12 @@ function App() {
     };
   }, [resetSimulation]);
   
-  // Calculate speed
   const calculateSpeed = (vx, vy) => {
     return Math.sqrt(vx * vx + vy * vy).toFixed(2);
+  };
+  
+  const formatMomentum = (value) => {
+    return value.toFixed(5);
   };
   
   return (
@@ -824,7 +889,7 @@ function App() {
                 ref={canvasRef}
                 width={canvasWidth}
                 height={canvasHeight}
-                className="sticky-canvas" // Added class for the sticky canvas fix
+                className="sticky-canvas"
               />
             </div>
             
@@ -836,6 +901,53 @@ function App() {
               <div>Speed: {calculateSpeed(liveVelocityB.x, liveVelocityB.y)}</div>
               <div>Angular: {liveVelocityB.angular.toFixed(3)} rad/f</div>
               <div>Mass: {massB}</div>
+            </div>
+          </div>
+          
+          {/* Momentum display */}
+          <div className="momentum-display">
+            <h3>Momentum Values {collisionCount > 0 ? `(Collision #${collisionCount})` : ""}</h3>
+            <div className="momentum-table">
+              <div className="momentum-header">
+                <div className="momentum-cell"></div>
+                <div className="momentum-cell">Before Collision</div>
+                <div className="momentum-cell">After Collision</div>
+              </div>
+              <div className="momentum-row">
+                <div className="momentum-cell blue-text">Square A (X)</div>
+                <div className="momentum-cell">{formatMomentum(momentumBeforeA.x)}</div>
+                <div className="momentum-cell">{formatMomentum(momentumAfterA.x)}</div>
+              </div>
+              <div className="momentum-row">
+                <div className="momentum-cell blue-text">Square A (Y)</div>
+                <div className="momentum-cell">{formatMomentum(momentumBeforeA.y)}</div>
+                <div className="momentum-cell">{formatMomentum(momentumAfterA.y)}</div>
+              </div>
+              <div className="momentum-row">
+                <div className="momentum-cell blue-text">Square A (Total)</div>
+                <div className="momentum-cell">{formatMomentum(momentumBeforeA.total)}</div>
+                <div className="momentum-cell">{formatMomentum(momentumAfterA.total)}</div>
+              </div>
+              <div className="momentum-row">
+                <div className="momentum-cell red-text">Square B (X)</div>
+                <div className="momentum-cell">{formatMomentum(momentumBeforeB.x)}</div>
+                <div className="momentum-cell">{formatMomentum(momentumAfterB.x)}</div>
+              </div>
+              <div className="momentum-row">
+                <div className="momentum-cell red-text">Square B (Y)</div>
+                <div className="momentum-cell">{formatMomentum(momentumBeforeB.y)}</div>
+                <div className="momentum-cell">{formatMomentum(momentumAfterB.y)}</div>
+              </div>
+              <div className="momentum-row">
+                <div className="momentum-cell red-text">Square B (Total)</div>
+                <div className="momentum-cell">{formatMomentum(momentumBeforeB.total)}</div>
+                <div className="momentum-cell">{formatMomentum(momentumAfterB.total)}</div>
+              </div>
+              <div className="momentum-row total-row">
+                <div className="momentum-cell">Total System Momentum</div>
+                <div className="momentum-cell">{formatMomentum(totalMomentumBefore)}</div>
+                <div className="momentum-cell">{formatMomentum(totalMomentumAfter)}</div>
+              </div>
             </div>
           </div>
           
