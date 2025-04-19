@@ -18,16 +18,78 @@ A physics simulation demonstrating elastic collisions between squares with reali
 
 ![collision-demo](https://github.com/user-attachments/assets/2bfe347e-8839-4818-b0b0-9c5cd243ff67)
 
-
-
 ## Physics Concepts
+**Linear Momentum Conservation**
 
-This simulation demonstrates several key concepts in classical mechanics:
-- Conservation of linear momentum
-- Conservation of angular momentum
-- Elastic and inelastic collisions
-- Rotational dynamics
-- Friction and energy transfer
+The simulation conserves linear momentum using the principle: total momentum before = total momentum after
+For two colliding squares A and B:
+```js
+m₁v₁ + m₂v₂ = m₁v₁′ + m₂v₂′
+```
+
+In the code, this is implemented through impulse-based collision:
+```js
+const impulseScalar = (-(1 + e) * velAlongNormal) / (1/squareA.mass + 1/squareB.mass);
+```
+Where e = 1 (elastic)
+
+
+Velocity changes are inversely proportional to mass:
+```js
+Δv₁ = -impulse * normal / m₁
+Δv₂ = impulse * normal / m₂
+```
+
+
+**Angular Momentum Conservation**
+
+Angular momentum = moment of inertia × angular velocity
+For squares: I = (1/6) * mass * size²
+During collisions, torque is applied based on:
+
+Collision point relative to center of mass (r vectors)
+Impulse forces acting perpendicular to these r vectors
+
+
+The code calculates torque impulses:
+```js
+const torqueImpulseA = (rAx * (-impulseScalar * ny) - rAy * (-impulseScalar * nx));
+```
+Angular velocity change = torqueImpulse / moment of inertia
+
+
+Friction at contact points converts some linear momentum to angular momentum
+
+**Wall Friction Effects**
+
+- Without friction:
+```js
+frictionedWalls = false
+```
+Nearly perfect restitution: `restitutionCoeff = 0.9999`
+Minimal angular damping: `angularVelocity *= 0.999999`
+Linear velocities reverse with nearly no energy loss
+Angular velocity barely changes after wall collisions
+
+
+- With friction:
+```js
+frictionedWalls = true
+```
+Lower restitution: `restitutionCoeff = 0.98`
+Significant angular damping: `angularVelocity *= 0.98`
+Linear velocity damping: `vx/vy *= 0.998`
+Torque is applied proportional to linear velocity
+
+Contact point's tangential velocity drives rotation:
+
+torque = r_perpendicular × Force
+Angular impulse = torque / momentOfInertia
+Angular velocity changes more dramatically
+
+
+Friction converts linear motion to rotational motion and gradually loses energy from the system
+
 
 ## Getting Started
 
@@ -74,22 +136,6 @@ npm start
 - Press "Start Simulation" to begin
 - Monitor real-time velocity and angular velocity data
 
-## Available Scripts
-
-In the project directory, you can run:
-
-### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.
 
 ## Contributing
 
