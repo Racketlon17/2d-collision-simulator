@@ -521,7 +521,7 @@ function App() {
     const fixedTimestep = 16.67; // 60 FPS equivalent in ms
     requestRef.current.accumulatedTime += elapsed;
     
-    const maxAccumulatedTime = fixedTimestep * 5;
+    const maxAccumulatedTime = fixedTimestep * 10;
     if (requestRef.current.accumulatedTime > maxAccumulatedTime) {
       requestRef.current.accumulatedTime = maxAccumulatedTime;
     }
