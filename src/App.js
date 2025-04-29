@@ -44,6 +44,7 @@ function App() {
   const [simulationSpeed, setSimulationSpeedRaw] = useState(1);
   const debouncedSimulationSpeed = useDebounce(simulationSpeed, 50);
   const [isCanvasVisible, setIsCanvasVisible] = useState(true);
+  const [showFps, setShowFps] = useState(true);
 
   // Momentum tracking states
   const [momentumBeforeA, setMomentumBeforeA] = useState({ x: 0, y: 0, total: 0 });
@@ -843,8 +844,8 @@ function App() {
         <div className="simulation-area">
           {/* Top simulation controls */}
           <div className="simulation-controls">
-            <div className="friction-toggle-container">
-              <label htmlFor="friction-toggle" className="friction-label">
+            <div className="toggle-container">
+              <label htmlFor="friction-toggle" className="toggle-label">
                 <span className={frictionedWalls ? "active-text" : ""}>Frictioned Walls</span>
                 <div className="toggle-switch">
                   <input 
@@ -852,6 +853,23 @@ function App() {
                     id="friction-toggle" 
                     checked={frictionedWalls} 
                     onChange={() => setFrictionedWalls(!frictionedWalls)}
+                  />
+                  <span className="slider"></span>
+                </div>
+              </label>
+            </div>
+						
+
+			{/* Choose to display FPS with a toggle */}
+            <div className="toggle-container">
+              <label htmlFor="show-fps-toggle" className="toggle-label">
+                <span className={showFps ? "active-text" : ""}>Show FPS</span>
+                <div className="toggle-switch">
+                  <input 
+                    type="checkbox" 
+                    id="show-fps-toggle" 
+                    checked={showFps} 
+                    onChange={() => setShowFps(!showFps)}
                   />
                   <span className="slider"></span>
                 </div>
@@ -899,7 +917,7 @@ function App() {
               />
 
 		      {/* FPS display */}
-			  <span className="canvas-fps">{fps} FPS</span>
+			  {showFps && <span className="canvas-fps">{fps} FPS</span>}
             </div>
             
             {/* Right panel - Square B */}

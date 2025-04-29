@@ -140,15 +140,15 @@ h2 {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* Friction toggle styling */
-.friction-toggle-container {
+/* Toggle styling used by friction and show fps options */
+.toggle-container {
   display: flex;
   justify-content: center;
   width: 100%;
   max-width: 300px;
 }
 
-.friction-label {
+.toggle-label {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -467,7 +467,7 @@ button {
     flex-wrap: wrap;
   }
   
-  .friction-toggle-container,
+  .toggle-container,
   .speed-slider-container {
     margin: 0 10px;
   }
