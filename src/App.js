@@ -31,6 +31,7 @@ function App() {
   const timeoutRef = useRef(null);
   const frameTimeRef = useRef({ lastFrameTime: 0, frameTimes: [] });
   const canvasRef = useRef(null);
+  const [fps, setFps] = useState(0);
   
   // Input states
   const [massA, setMassA] = useState(10);
@@ -515,6 +516,8 @@ function App() {
       const avgFrameTime = frameTimeRef.current.frameTimes.reduce((a, b) => a + b, 0) / 
                           (frameTimeRef.current.frameTimes.length || 1);
       console.log(`FPS: ${(1000 / avgFrameTime).toFixed(1)}, Canvas visible: ${isCanvasVisible}`);
+	  // Update FPS state every second to show the result in the ui
+	  setFps((1000 / avgFrameTime).toFixed(1));
       frameTimeRef.current.lastLog = now;
     }
     
@@ -655,6 +658,7 @@ function App() {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
+	setFps(0);
   };
   
   // Reset simulation
@@ -834,6 +838,8 @@ function App() {
     <div className="App">
       <header className="App-header">
         <h2>2D Square Collision Simulation with Rotation</h2>
+
+
         <div className="simulation-area">
           {/* Top simulation controls */}
           <div className="simulation-controls">
@@ -891,6 +897,9 @@ function App() {
                 height={canvasHeight}
                 className="sticky-canvas"
               />
+
+		      {/* FPS display */}
+			  <span className="canvas-fps">{fps} FPS</span>
             </div>
             
             {/* Right panel - Square B */}

@@ -112,6 +112,17 @@ h2 {
   contain: layout paint style;
 }
 
+/* FPS display with terminal type green color */
+.canvas-fps {
+  color: #4AF626;
+  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+  font-size: 12px;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 101;
+}
+
 /* Updated simulation controls styling */
 .simulation-controls {
   display: flex;
