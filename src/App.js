@@ -127,14 +127,14 @@ function App() {
     
     // Update live velocity display
     setLiveVelocityA({
-      x: Number(squareA.vx.toFixed(2)),
-      y: Number(squareA.vy.toFixed(2)),
+      x: Number(squareA.vx.toFixed(3)),
+      y: Number(squareA.vy.toFixed(3)),
       angular: Number(squareA.angularVelocity.toFixed(3))
     });
     
     setLiveVelocityB({
-      x: Number(squareB.vx.toFixed(2)),
-      y: Number(squareB.vy.toFixed(2)),
+      x: Number(squareB.vx.toFixed(3)),
+      y: Number(squareB.vy.toFixed(3)),
       angular: Number(squareB.angularVelocity.toFixed(3))
     });
   };
@@ -162,7 +162,7 @@ function App() {
     const wallFrictionMultiplier = frictionedWalls ? 1.0 : 0.01;
     
     // Set restitution coefficient based on frictionedWalls
-    const restitutionCoeff = frictionedWalls ? 0.98 : 0.9999;
+    const restitutionCoeff = frictionedWalls ? 0.98 : 1;
     
     if (squareA.x <= 0 || squareA.x + squareA.size >= canvasWidth) {
       squareAHitWall = true;
@@ -307,13 +307,13 @@ function App() {
         squareB.vy *= 0.998;
       }
     } else {
-      // With no friction, apply minimal damping only on collision
+      // With no friction, apply no damping on collision
       if (squareAHitWall) {
-        squareA.angularVelocity *= 0.999999;
+        squareA.angularVelocity *= 1;
       }
       
       if (squareBHitWall) {
-        squareB.angularVelocity *= 0.999999;
+        squareB.angularVelocity *= 1;
       }
     }
   };
@@ -828,11 +828,11 @@ function App() {
   }, [resetSimulation]);
   
   const calculateSpeed = (vx, vy) => {
-    return Math.sqrt(vx * vx + vy * vy).toFixed(2);
+    return Math.sqrt(vx * vx + vy * vy).toFixed(3);
   };
   
   const formatMomentum = (value) => {
-    return value.toFixed(5);
+    return value.toFixed(3);
   };
   
   return (
@@ -900,8 +900,8 @@ function App() {
             {/* Left panel - Square A */}
             <div className="velocity-display blue">
               <h4>Square A (Blue)</h4>
-              <div>Vx: {liveVelocityA.x.toFixed(5)}</div>
-              <div>Vy: {liveVelocityA.y.toFixed(5)}</div>
+              <div>Vx: {liveVelocityA.x.toFixed(3)}</div>
+              <div>Vy: {liveVelocityA.y.toFixed(3)}</div>
               <div>Speed: {calculateSpeed(liveVelocityA.x, liveVelocityA.y)}</div>
               <div>Angular: {liveVelocityA.angular.toFixed(3)} rad/f</div>
               <div>Mass: {massA}</div>
@@ -923,8 +923,8 @@ function App() {
             {/* Right panel - Square B */}
             <div className="velocity-display red">
               <h4>Square B (Red)</h4>
-              <div>Vx: {liveVelocityB.x.toFixed(5)}</div>
-              <div>Vy: {liveVelocityB.y.toFixed(5)}</div>
+              <div>Vx: {liveVelocityB.x.toFixed(3)}</div>
+              <div>Vy: {liveVelocityB.y.toFixed(3)}</div>
               <div>Speed: {calculateSpeed(liveVelocityB.x, liveVelocityB.y)}</div>
               <div>Angular: {liveVelocityB.angular.toFixed(3)} rad/f</div>
               <div>Mass: {massB}</div>
