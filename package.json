@@ -1,5 +1,6 @@
 {
-  "name": "collision-simulation",
+  "name": "2D collision simulation",
+  "description": "2D physic engine for collisions, rotations and more",
   "version": "0.1.0",
   "homepage": "https://racketlon17.github.io/2d-collision-simulator",
   "private": true,

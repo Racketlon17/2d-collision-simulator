@@ -18,6 +18,8 @@ A physics simulation demonstrating elastic collisions between squares with reali
 
 ![collision-demo](https://github.com/user-attachments/assets/2bfe347e-8839-4818-b0b0-9c5cd243ff67)
 
+##Check out the live demo of the simulation: [Live Demo - 2D Collision Simulator](https://racketlon17.github.io/2d-collision-simulator)
+
 ## Physics Concepts
 **Linear Momentum Conservation**
 
