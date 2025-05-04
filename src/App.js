@@ -18,8 +18,8 @@ const useDebounce = (value, delay) => {
 };
 
 function App() {
-  const canvasWidth = 1200;
-  const canvasHeight = 800;
+  const [canvasWidth, setCanvasWidth] = useState(1200);
+  const [canvasHeight, setCanvasHeight] = useState(800);
   
   // Base size for the squares - will be multiplied by mass
   const baseSizeMultiplier = 5;
@@ -33,6 +33,11 @@ function App() {
   const canvasRef = useRef(null);
   const [fps, setFps] = useState(0);
   
+  const getScaleFactor = useCallback(() => {
+    return Math.min(1, (window.innerWidth - 40) / 1200);
+  }, []);
+
+
   // Input states
   const [massA, setMassA] = useState(10);
   const [massB, setMassB] = useState(10);
@@ -62,7 +67,8 @@ function App() {
   
   // Calculate square sizes based on mass
   const getSquareSize = (mass) => {
-    return Math.max(minSize, mass * baseSizeMultiplier);
+    const scaleFactor = getScaleFactor();
+    return Math.max(minSize * scaleFactor, mass * baseSizeMultiplier * scaleFactor);
   };
   
   const squareARef = useRef({
@@ -672,6 +678,9 @@ function App() {
     const sizeA = getSquareSize(Number(massA));
     const sizeB = getSquareSize(Number(massB));
     
+    // Scale factor to maintain proportion
+    const scaleFactor = getScaleFactor();
+    
     const posYA = canvasHeight / 2 - sizeA / 2;
     const posYB = canvasHeight / 2 - sizeB / 2;
     
@@ -732,15 +741,11 @@ function App() {
       const ctx = canvasRef.current.getContext('2d');
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
       
-      // Draw square A
-      ctx.fillStyle = '#4285F4';
-      ctx.fillRect(300, posYA, sizeA, sizeA);
-      
-      // Draw square B
-      ctx.fillStyle = '#EA4335';
-      ctx.fillRect(800, posYB, sizeB, sizeB);
+      // Draw rotated squares
+      drawRotatedSquare(ctx, squareARef.current);
+      drawRotatedSquare(ctx, squareBRef.current);
     }
-  }, [velocityAX, velocityAY, velocityBX, velocityBY, massA, massB, canvasWidth, canvasHeight]);
+  }, [velocityAX, velocityAY, velocityBX, velocityBY, massA, massB, canvasWidth, canvasHeight, getScaleFactor]);
   
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -830,6 +835,31 @@ function App() {
   const calculateSpeed = (vx, vy) => {
     return Math.sqrt(vx * vx + vy * vy).toFixed(3);
   };
+
+  useEffect(() => {
+    const handleResize = () => {
+      const scaleFactor = getScaleFactor();
+      setCanvasWidth(1200 * scaleFactor);
+      setCanvasHeight(800 * scaleFactor);
+      
+      if (canvasRef.current) {
+        canvasRef.current.width = 1200 * scaleFactor;
+        canvasRef.current.height = 800 * scaleFactor;
+      }
+      
+      // Redraw if not running
+      if (!isRunning) {
+        resetSimulation();
+      }
+    };
+    
+    handleResize(); // Initialize on mount
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [getScaleFactor, isRunning, resetSimulation]);
   
   const formatMomentum = (value) => {
     return value.toFixed(3);
