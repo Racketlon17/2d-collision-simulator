@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/2d-collision-simulator/static/css/main.c64de8cd.css",
+    "main.css": "/2d-collision-simulator/static/css/main.d172f0fc.css",
     "main.js": "/2d-collision-simulator/static/js/main.a2c115d3.js",
     "static/js/453.ede1085a.chunk.js": "/2d-collision-simulator/static/js/453.ede1085a.chunk.js",
     "index.html": "/2d-collision-simulator/index.html",
-    "main.c64de8cd.css.map": "/2d-collision-simulator/static/css/main.c64de8cd.css.map",
+    "main.d172f0fc.css.map": "/2d-collision-simulator/static/css/main.d172f0fc.css.map",
     "main.a2c115d3.js.map": "/2d-collision-simulator/static/js/main.a2c115d3.js.map",
     "453.ede1085a.chunk.js.map": "/2d-collision-simulator/static/js/453.ede1085a.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.c64de8cd.css",
+    "static/css/main.d172f0fc.css",
     "static/js/main.a2c115d3.js"
   ]
 }
