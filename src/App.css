@@ -44,17 +44,20 @@ h2 {
   align-items: center;
   width: 100%;
   margin: 20px 0;
-  gap: 30px;
+  gap: 10px;
 }
 
 .velocity-display {
   width: 180px;
+  min-width: 140px;
+  max-width: 180px;
   padding: 15px;
   border-radius: 8px;
   background-color: rgba(15, 23, 42, 0.4);
   backdrop-filter: blur(3px);
   border: 1px solid;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
 /* Blue panel styling */
@@ -105,7 +108,8 @@ h2 {
   overflow: hidden;
   position: relative;
   z-index: 1;
-  width: 600px;
+  max-width: 600px;
+  flex: 1;
   /* Performance optimizations */
   transform: translateZ(0);
   will-change: transform;
@@ -459,161 +463,6 @@ button {
   color: white;
 }
 
-/* Media query for larger screens */
-@media (min-width: 768px) {
-  .simulation-controls {
-    flex-direction: row;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  
-  .toggle-container,
-  .speed-slider-container {
-    margin: 0 10px;
-  }
-}
-
-@media (max-width: 1024px) {
-  .canvas-with-panels {
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .velocity-display {
-    width: 100%;
-    max-width: 600px;
-  }
-  
-  .canvas-container {
-    max-width: 100%;
-  }
-  
-  .momentum-table {
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 768px) {
-  .simulation-controls {
-    flex-direction: column;
-    padding: 15px 10px;
-  }
-  
-  .toggle-container,
-  .speed-slider-container {
-    width: 100%;
-    max-width: 100%;
-  }
-  
-  .momentum-cell {
-    padding: 4px 6px;
-  }
-  
-  h2 {
-    font-size: 22px;
-  }
-}
-
-@media (max-width: 480px) {
-  .App-header {
-    padding: 10px;
-  }
-  
-  .square-controls {
-    padding: 15px 10px;
-  }
-  
-  .momentum-table {
-    font-size: 10px;
-  }
-  
-  .input-group {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .input-group input {
-    width: 100%;
-    margin-top: 5px;
-  }
-  
-  h2 {
-    font-size: 18px;
-  }
-}
-
-@media (max-width: 350px) {
-  .button-container button {
-    padding: 10px 15px;
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 640px) {
-  .canvas-container {
-    width: 100%;
-  }
-  
-  .controls-container {
-    flex-direction: column;
-  }
-  
-  .button-container {
-    flex-direction: column;
-    width: 100%;
-    max-width: 200px;
-  }
-  
-  button {
-    width: 100%;
-  }
-}
-
-.sticky-canvas {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 100;
-  
-  will-change: transform;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  
-  image-rendering: optimizeSpeed;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: optimize-contrast;
-  -ms-interpolation-mode: nearest-neighbor;
-  
-  width: 600px !important;
-  height: 400px !important;
-}
-
-.canvas-container {
-  position: relative;
-  width: 600px;
-  height: 400px;
-  margin: 0 auto;
-  overflow: hidden;
-  
-  border: 2px dashed #ccc;
-}
-
-.canvas-container {
-  width: 100%;
-  max-width: 600px;
-  height: auto;
-  aspect-ratio: 3/2;
-}
-
-canvas {
-  width: 100%;
-  height: 100%;
-  max-width: 600px;
-  max-height: 400px;
-}
-
 .sticky-canvas {
   position: relative;
   top: unset;
@@ -621,6 +470,17 @@ canvas {
   transform: none;
   width: 100% !important;
   height: 100% !important;
+}
+
+.canvas-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  aspect-ratio: 3/2;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 2px dashed #ccc;
 }
 
 .canvas-container::after {
@@ -639,10 +499,15 @@ canvas {
 }
 
 canvas {
+  width: 100%;
+  height: 100%;
+  max-width: 600px;
+  max-height: 400px;
   will-change: transform;
   transform: translateZ(0);
 }
 
+/* Improved momentum display for better responsiveness */
 .momentum-display {
   width: 100%;
   max-width: 800px;
@@ -653,6 +518,8 @@ canvas {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  overflow-x: auto; /* Add horizontal scroll for very small screens */
+  box-sizing: border-box;
 }
 
 .momentum-display h3 {
@@ -672,6 +539,7 @@ canvas {
   display: table;
   font-size: 14px;
   font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+  table-layout: fixed; /* Fixed layout for better control */
 }
 
 .momentum-header {
@@ -694,6 +562,9 @@ canvas {
   padding: 6px 10px;
   text-align: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .momentum-cell:first-child {
@@ -711,6 +582,284 @@ canvas {
   padding-top: 8px;
   padding-bottom: 8px;
   color: #f8fafc;
+}
+
+/* Larger screens media query */
+@media (min-width: 1025px) {
+  .canvas-with-panels {
+    flex-wrap: nowrap;
+  }
+  
+  .velocity-display {
+    min-width: 160px;
+    flex-basis: 180px;
+    flex-shrink: 0;
+  }
+  
+  .canvas-container {
+    flex-grow: 1;
+    max-width: 600px;
+  }
+}
+
+/* Medium screens media query */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .canvas-with-panels {
+    flex-direction: row;
+    justify-content: center;
+    gap: 10px;
+  }
+  
+  .velocity-display {
+    flex-basis: 140px;
+    min-width: 140px;
+    max-width: 160px;
+  }
+  
+  .velocity-display div:not(:first-child) {
+    font-size: 13px;
+  }
+  
+  .canvas-container {
+    max-width: calc(100% - 300px);
+    min-width: 300px;
+  }
+  
+  .momentum-table {
+    font-size: 12px;
+  }
+}
+
+/* Media query for tablets */
+@media (max-width: 768px) and (min-width: 641px) {
+  .simulation-controls {
+    flex-direction: column;
+    padding: 15px 10px;
+  }
+  
+  .toggle-container,
+  .speed-slider-container {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .canvas-with-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: auto;
+    gap: 10px;
+    width: 100%;
+  }
+  
+  .velocity-display {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .velocity-display.blue {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  
+  .velocity-display.red {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  
+  .canvas-container {
+    grid-column: 1 / span 2;
+    grid-row: 2;
+    width: 100%;
+    max-width: 100%;
+    min-width: auto;
+  }
+  
+  .momentum-cell {
+    padding: 5px 8px;
+  }
+  
+  h2 {
+    font-size: 22px;
+  }
+}
+
+/* Media query for smaller tablets */
+@media (max-width: 640px) {
+  .canvas-with-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: auto;
+    gap: 10px;
+    width: 100%;
+  }
+  
+  .velocity-display {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .velocity-display.blue {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  
+  .velocity-display.red {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  
+  .canvas-container {
+    grid-column: 1 / span 2;
+    grid-row: 2;
+    width: 100%;
+    max-width: 100%;
+    min-width: auto;
+  }
+  
+  .controls-container {
+    flex-direction: column;
+  }
+  
+  .button-container {
+    flex-direction: column;
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  button {
+    width: 100%;
+  }
+}
+
+/* Media query for mobile */
+@media (max-width: 480px) {
+  .App-header {
+    padding: 10px;
+  }
+  
+  .square-controls {
+    padding: 15px 10px;
+  }
+  
+  /* Keep the existing input group styles */
+  .input-group {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+  
+  .input-group label {
+    margin-bottom: 8px;
+    display: block;
+    width: 100%;
+  }
+  
+  .input-group input {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: right;
+    padding-right: 15px;
+    margin-top: 0;
+  }
+  
+  .blue-text, .red-text {
+    font-size: 16px;
+    margin-bottom: 15px;
+  }
+  
+  h2 {
+    font-size: 18px;
+  }
+  
+  /* Enhanced mobile momentum table styles */
+  .momentum-table {
+    font-size: 11px;
+  }
+  
+  .momentum-cell {
+    padding: 4px 3px;
+  }
+  
+  .momentum-header .momentum-cell,
+  .total-row .momentum-cell {
+    font-weight: 600;
+    font-size: 11px;
+  }
+  
+  .momentum-display h3 {
+    font-size: 16px;
+  }
+  
+  /* Enhanced mobile velocity display styles */
+  .canvas-with-panels {
+    gap: 8px;
+    margin: 10px 0;
+  }
+  
+  .velocity-display {
+    padding: 10px;
+  }
+  
+  .velocity-display div:not(:first-child) {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+  
+  .velocity-display h4 {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+}
+
+/* Media query for very small mobile screens */
+@media (max-width: 350px) {
+  .momentum-table {
+    font-size: 9px;
+    white-space: nowrap;
+  }
+  
+  .momentum-cell {
+    padding: 3px 2px;
+  }
+  
+  .momentum-cell:first-child {
+    width: 30%;
+  }
+  
+  .button-container button {
+    padding: 10px 15px;
+    font-size: 13px;
+  }
+  
+  .square-controls {
+    padding: 10px 8px;
+  }
+  
+  .input-group {
+    margin-bottom: 15px;
+  }
+  
+  .input-group label {
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  
+  .blue-text, .red-text {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  
+  .velocity-display div:not(:first-child) {
+    font-size: 9px;
+    margin-bottom: 4px;
+  }
+  
+  .velocity-display h4 {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
 }
 
 .blue-text {
