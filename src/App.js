@@ -52,253 +52,401 @@ function App() {
   const [showFps, setShowFps] = useState(true);
 
   // Momentum tracking states
-  const [momentumBeforeA, setMomentumBeforeA] = useState({ x: 0, y: 0, total: 0 });
-  const [momentumBeforeB, setMomentumBeforeB] = useState({ x: 0, y: 0, total: 0 });
-  const [momentumAfterA, setMomentumAfterA] = useState({ x: 0, y: 0, total: 0 });
-  const [momentumAfterB, setMomentumAfterB] = useState({ x: 0, y: 0, total: 0 });
+  const [momentumBeforeA, setMomentumBeforeA] = useState({
+    x: 0,
+    y: 0,
+    total: 0,
+  });
+  const [momentumBeforeB, setMomentumBeforeB] = useState({
+    x: 0,
+    y: 0,
+    total: 0,
+  });
+  const [momentumAfterA, setMomentumAfterA] = useState({
+    x: 0,
+    y: 0,
+    total: 0,
+  });
+  const [momentumAfterB, setMomentumAfterB] = useState({
+    x: 0,
+    y: 0,
+    total: 0,
+  });
   const [totalMomentumBefore, setTotalMomentumBefore] = useState(0);
   const [totalMomentumAfter, setTotalMomentumAfter] = useState(0);
   const [collisionCount, setCollisionCount] = useState(0);
   const lastCollisionTimeRef = useRef(0);
-  
+
   const setSimulationSpeed = (newSpeed) => {
     setSimulationSpeedRaw(parseFloat(newSpeed));
   };
-  
+
   // Calculate square sizes based on mass
   const getSquareSize = (mass) => {
     const scaleFactor = getScaleFactor();
     return Math.max(minSize * scaleFactor, mass * baseSizeMultiplier * scaleFactor);
   };
-  
-  const squareARef = useRef({
+
+  // Drag and drop position states
+  const [initialPosA, setInitialPosA] = useState({
     x: canvasWidth / 4,
-    y: canvasHeight / 2 - getSquareSize(10) / 2,
+    y: canvasHeight / 2 - getSquareSize(massA) / 2,
+  });
+  const [initialPosB, setInitialPosB] = useState({
+    x: (canvasWidth * 3) / 4 - getSquareSize(massB),
+    y: canvasHeight / 2 - getSquareSize(massB) / 2,
+  });
+  const draggingRef = useRef(null); // Which square is being dragged currently
+  const dragOffset = useRef({ x: 0, y: 0 }); // So that square doesn't jump to align its top left corner under the mouse when clicked
+
+  // Helper function to redraw canvas
+  const redraw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    drawRotatedSquare(ctx, squareARef.current);
+    drawRotatedSquare(ctx, squareBRef.current);
+  }, [canvasWidth, canvasHeight]);
+
+  // Handles drag and drop positioning
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = () => canvas.getBoundingClientRect();
+    const getPos = e => {
+      const r = rect();
+      const scaleX = canvas.width  / r.width;
+      const scaleY = canvas.height / r.height;
+      return {
+        x: (e.clientX - r.left) * scaleX,
+        y: (e.clientY - r.top ) * scaleY
+      };
+    };
+
+    // Helper function to check if the point the user selects is within the square 
+    const isOver = (pos, square) =>
+      pos.x >= square.x &&
+      pos.x <= square.x + square.size &&
+      pos.y >= square.y &&
+      pos.y <= square.y + square.size;
+
+    function pointerDown(e) {
+      const p = getPos(e);
+      if (isOver(p, squareARef.current)) {
+        draggingRef.current = "A";
+        dragOffset.current = {
+          x: p.x - squareARef.current.x,
+          y: p.y - squareARef.current.y,
+        };
+      } else if (isOver(p, squareBRef.current)) {
+        draggingRef.current = "B";
+        dragOffset.current = {
+          x: p.x - squareBRef.current.x,
+          y: p.y - squareBRef.current.y,
+        };
+      }
+    }
+
+    function pointerMove(e) {
+      const which = draggingRef.current;
+      if (!which) return;
+
+      const p = getPos(e);
+      const newX = p.x - dragOffset.current.x;
+      const newY = p.y - dragOffset.current.y;
+
+      // Update both the ref (for drawing) and state (for manual input values) 
+      if (which === "A") { 
+        squareARef.current.x = newX;
+        squareARef.current.y = newY;
+        setInitialPosA({ x: newX, y: newY });
+      } else {
+        squareBRef.current.x = newX;
+        squareBRef.current.y = newY;
+        setInitialPosB({ x: newX, y: newY });
+      }
+
+      redraw();
+    }
+
+    function pointerUp() {
+      draggingRef.current = null;
+    }
+
+    canvas.addEventListener("pointerdown", pointerDown);
+    window.addEventListener("pointermove", pointerMove);
+    window.addEventListener("pointerup", pointerUp);
+
+    return () => {
+      canvas.removeEventListener("pointerdown", pointerDown);
+      window.removeEventListener("pointermove", pointerMove);
+      window.removeEventListener("pointerup", pointerUp);
+    };
+  }, [massA, massB, redraw]);
+
+  const squareARef = useRef({
+    x: initialPosA.x,
+    y: initialPosA.y,
     vx: 5,
     vy: 0,
     mass: 10,
     size: getSquareSize(10),
-    color: '#4285F4',
+    color: "#4285F4",
     angle: 0,
-    angularVelocity: 0
+    angularVelocity: 0,
   });
-  
+
   const squareBRef = useRef({
-    x: canvasWidth * 3/4 - getSquareSize(10),
-    y: canvasHeight / 2 - getSquareSize(10) / 2,
+    x: initialPosB.x,
+    y: initialPosB.y,
     vx: -5,
     vy: 0,
     mass: 10,
     size: getSquareSize(10),
-    color: '#EA4335',
+    color: "#EA4335",
     angle: 0,
-    angularVelocity: 0
+    angularVelocity: 0,
   });
-  
+
+  // Updates squareARef's position when initialPosA is changed via parameters
+  useEffect(() => {
+    squareARef.current.x = initialPosA.x;
+    squareARef.current.y = initialPosA.y;
+
+    redraw();
+  }, [initialPosA, redraw]);
+  // Updates squareBRef's position when initialPosB is changed via parameters
+  useEffect(() => {
+    squareBRef.current.x = initialPosB.x;
+    squareBRef.current.y = initialPosB.y;
+
+    redraw();
+  }, [initialPosB, redraw])
+
   // Live velocity display values
-  const [liveVelocityA, setLiveVelocityA] = useState({ x: 5, y: 0, angular: 0 });
-  const [liveVelocityB, setLiveVelocityB] = useState({ x: -5, y: 0, angular: 0 });
-  
+  const [liveVelocityA, setLiveVelocityA] = useState({
+    x: 5,
+    y: 0,
+    angular: 0,
+  });
+  const [liveVelocityB, setLiveVelocityB] = useState({
+    x: -5,
+    y: 0,
+    angular: 0,
+  });
+
   // Calculate momentum for a square
   const calculateMomentum = (square) => {
     const px = square.mass * square.vx;
     const py = square.mass * square.vy;
     const totalMomentum = Math.sqrt(px * px + py * py);
-    
+
     return {
       x: px,
       y: py,
-      total: totalMomentum
+      total: totalMomentum,
     };
   };
-  
+
   // Update positions and rotations
   const updatePositions = () => {
     const squareA = squareARef.current;
     const squareB = squareBRef.current;
-    
+
     // Update linear positions
     squareA.x += squareA.vx;
     squareA.y += squareA.vy;
     squareB.x += squareB.vx;
     squareB.y += squareB.vy;
-    
+
     // Update rotation angles
     squareA.angle += squareA.angularVelocity;
     squareB.angle += squareB.angularVelocity;
-    
+
     // Keep angles within reasonable bounds to avoid very large values
     squareA.angle = squareA.angle % (2 * Math.PI);
     squareB.angle = squareB.angle % (2 * Math.PI);
-    
+
     // Update live velocity display
     setLiveVelocityA({
       x: Number(squareA.vx.toFixed(3)),
       y: Number(squareA.vy.toFixed(3)),
-      angular: Number(squareA.angularVelocity.toFixed(3))
+      angular: Number(squareA.angularVelocity.toFixed(3)),
     });
-    
+
     setLiveVelocityB({
       x: Number(squareB.vx.toFixed(3)),
       y: Number(squareB.vy.toFixed(3)),
-      angular: Number(squareB.angularVelocity.toFixed(3))
+      angular: Number(squareB.angularVelocity.toFixed(3)),
     });
   };
-  
+
   // Calculate moment of inertia for a square
   const calculateMomentOfInertia = (mass, size) => {
-    return (1/6) * mass * size * size;
+    return (1 / 6) * mass * size * size;
   };
 
   const checkWalls = () => {
     const squareA = squareARef.current;
     const squareB = squareBRef.current;
-    
+
     // Track if collisions occurred
     let squareAHitWall = false;
     let squareBHitWall = false;
-    
+
     // Calculate square centers
     const centerAX = squareA.x + squareA.size / 2;
     const centerAY = squareA.y + squareA.size / 2;
     const centerBX = squareB.x + squareB.size / 2;
     const centerBY = squareB.y + squareB.size / 2;
-    
+
     // Set wall friction multiplier based on toggle state
     const wallFrictionMultiplier = frictionedWalls ? 1.0 : 0.01;
-    
+
     // Set restitution coefficient based on frictionedWalls
     const restitutionCoeff = frictionedWalls ? 0.98 : 1;
-    
+
     if (squareA.x <= 0 || squareA.x + squareA.size >= canvasWidth) {
       squareAHitWall = true;
-      
-      
+
       squareA.vx = -squareA.vx * restitutionCoeff;
-      
+
       if (Math.abs(squareA.vy) > 0.01) {
         const inertiaA = calculateMomentOfInertia(squareA.mass, squareA.size);
-        
+
         let collisionY;
         let wallX;
-        
+
         if (squareA.x <= 0) {
           wallX = 0;
-          collisionY = centerAY + (squareA.vy > 0 ? 1 : -1) * squareA.size / 4;
+          collisionY =
+            centerAY + ((squareA.vy > 0 ? 1 : -1) * squareA.size) / 4;
         } else {
           wallX = canvasWidth;
-          collisionY = centerAY + (squareA.vy > 0 ? 1 : -1) * squareA.size / 4;
+          collisionY =
+            centerAY + ((squareA.vy > 0 ? 1 : -1) * squareA.size) / 4;
         }
-        
+
         const rAx = wallX - centerAX;
         const rAy = collisionY - centerAY;
-        
+
         const torque = rAx * squareA.vy - rAy * squareA.vx;
         const angularImpulse = torque / inertiaA;
         squareA.angularVelocity += angularImpulse * wallFrictionMultiplier;
       }
-      
+
       // Keep in bounds
       if (squareA.x < 0) squareA.x = 0;
-      if (squareA.x + squareA.size > canvasWidth) squareA.x = canvasWidth - squareA.size;
+      if (squareA.x + squareA.size > canvasWidth)
+        squareA.x = canvasWidth - squareA.size;
     }
-    
+
     if (squareA.y <= 0 || squareA.y + squareA.size >= canvasHeight) {
       squareAHitWall = true;
       squareA.vy = -squareA.vy * restitutionCoeff;
       if (Math.abs(squareA.vx) > 0.01) {
-
         // Calculate moment of inertia
         const inertiaA = calculateMomentOfInertia(squareA.mass, squareA.size);
-        
+
         let collisionX;
         let wallY;
-        
+
         if (squareA.y <= 0) {
           wallY = 0;
-          collisionX = centerAX + (squareA.vx > 0 ? 1 : -1) * squareA.size / 4;
+          collisionX =
+            centerAX + ((squareA.vx > 0 ? 1 : -1) * squareA.size) / 4;
         } else {
           wallY = canvasHeight;
-          collisionX = centerAX + (squareA.vx > 0 ? 1 : -1) * squareA.size / 4;
+          collisionX =
+            centerAX + ((squareA.vx > 0 ? 1 : -1) * squareA.size) / 4;
         }
-        
+
         const rAx = collisionX - centerAX;
         const rAy = wallY - centerAY;
-        
+
         const torque = rAx * squareA.vy - rAy * squareA.vx;
-        
+
         const angularImpulse = torque / inertiaA;
         squareA.angularVelocity += angularImpulse * wallFrictionMultiplier;
       }
-      
+
       if (squareA.y < 0) squareA.y = 0;
-      if (squareA.y + squareA.size > canvasHeight) squareA.y = canvasHeight - squareA.size;
+      if (squareA.y + squareA.size > canvasHeight)
+        squareA.y = canvasHeight - squareA.size;
     }
-    
+
     if (squareB.x <= 0 || squareB.x + squareB.size >= canvasWidth) {
       squareBHitWall = true;
-      
+
       squareB.vx = -squareB.vx * restitutionCoeff;
-      
+
       if (Math.abs(squareB.vy) > 0.01) {
         const inertiaB = calculateMomentOfInertia(squareB.mass, squareB.size);
-      
+
         let collisionY;
         let wallX;
-        
+
         if (squareB.x <= 0) {
           wallX = 0;
-          collisionY = centerBY + (squareB.vy > 0 ? 1 : -1) * squareB.size / 4;
+          collisionY =
+            centerBY + ((squareB.vy > 0 ? 1 : -1) * squareB.size) / 4;
         } else {
           wallX = canvasWidth;
-          collisionY = centerBY + (squareB.vy > 0 ? 1 : -1) * squareB.size / 4;
+          collisionY =
+            centerBY + ((squareB.vy > 0 ? 1 : -1) * squareB.size) / 4;
         }
-        
+
         const rBx = wallX - centerBX;
         const rBy = collisionY - centerBY;
-        
+
         const torque = rBx * squareB.vy - rBy * squareB.vx;
-        
+
         const angularImpulse = torque / inertiaB;
         squareB.angularVelocity += angularImpulse * wallFrictionMultiplier;
       }
-    
+
       if (squareB.x < 0) squareB.x = 0;
-      if (squareB.x + squareB.size > canvasWidth) squareB.x = canvasWidth - squareB.size;
+      if (squareB.x + squareB.size > canvasWidth)
+        squareB.x = canvasWidth - squareB.size;
     }
-    
+
     if (squareB.y <= 0 || squareB.y + squareB.size >= canvasHeight) {
       squareBHitWall = true;
-      
+
       squareB.vy = -squareB.vy * restitutionCoeff;
-      
+
       if (Math.abs(squareB.vx) > 0.01) {
         const inertiaB = calculateMomentOfInertia(squareB.mass, squareB.size);
-      
+
         let collisionX;
         let wallY;
-        
+
         if (squareB.y <= 0) {
           wallY = 0;
-          collisionX = centerBX + (squareB.vx > 0 ? 1 : -1) * squareB.size / 4;
+          collisionX =
+            centerBX + ((squareB.vx > 0 ? 1 : -1) * squareB.size) / 4;
         } else {
           wallY = canvasHeight;
-          collisionX = centerBX + (squareB.vx > 0 ? 1 : -1) * squareB.size / 4;
+          collisionX =
+            centerBX + ((squareB.vx > 0 ? 1 : -1) * squareB.size) / 4;
         }
-        
+
         const rBx = collisionX - centerBX;
         const rBy = wallY - centerBY;
-        
+
         const torque = rBx * squareB.vy - rBy * squareB.vx;
-        
+
         const angularImpulse = torque / inertiaB;
         squareB.angularVelocity += angularImpulse * wallFrictionMultiplier;
       }
 
       if (squareB.y < 0) squareB.y = 0;
-      if (squareB.y + squareB.size > canvasHeight) squareB.y = canvasHeight - squareB.size;
+      if (squareB.y + squareB.size > canvasHeight)
+        squareB.y = canvasHeight - squareB.size;
     }
-    
+
     if (frictionedWalls) {
       // Apply angular velocity damping only if a wall was hit
       if (squareAHitWall) {
@@ -682,63 +830,75 @@ function App() {
     const scaleFactor = getScaleFactor();
     
     const posYA = canvasHeight / 2 - sizeA / 2;
+    const posXA = canvasWidth / 4;
     const posYB = canvasHeight / 2 - sizeB / 2;
-    
+    const posXB = canvasWidth * 3/4 - sizeB;
+
+    // Reset pos parameters 
+    setInitialPosA({
+      x: posXA,
+      y: posYA,
+    });
+    setInitialPosB({
+      x: posXB,
+      y: posYB,
+    })
+
     squareARef.current = {
-      x: canvasWidth / 4,
+      x: posXA,
       y: posYA,
       vx: Number(velocityAX),
       vy: Number(velocityAY),
       mass: Number(massA),
       size: sizeA,
-      color: '#4285F4',
+      color: "#4285F4",
       angle: 0,
-      angularVelocity: 0
+      angularVelocity: 0,
     };
-    
+
     squareBRef.current = {
-      x: canvasWidth * 3/4 - sizeB,
+      x: posXB,
       y: posYB,
       vx: Number(velocityBX),
       vy: Number(velocityBY),
       mass: Number(massB),
       size: sizeB,
-      color: '#EA4335',
+      color: "#EA4335",
       angle: 0,
-      angularVelocity: 0
+      angularVelocity: 0,
     };
-    
-    // Reset velocity display
+ 
+    // Reset velocity display 
     setLiveVelocityA({
       x: Number(velocityAX),
       y: Number(velocityAY),
-      angular: 0
+      angular: 0,
     });
-    
+
     setLiveVelocityB({
       x: Number(velocityBX),
       y: Number(velocityBY),
-      angular: 0
+      angular: 0,
     });
-    
+
     // Initialize momentum values
     const momentumA = calculateMomentum(squareARef.current);
     const momentumB = calculateMomentum(squareBRef.current);
-    
+
     setMomentumBeforeA(momentumA);
     setMomentumBeforeB(momentumB);
     setMomentumAfterA(momentumA);
     setMomentumAfterB(momentumB);
     setTotalMomentumBefore(momentumA.total + momentumB.total);
     setTotalMomentumAfter(momentumA.total + momentumB.total);
-    
+
     // Reset collision count
     setCollisionCount(0);
     lastCollisionTimeRef.current = 0;
-    
+
     // Redraw squares
     if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
+      const ctx = canvasRef.current.getContext("2d");
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
       
       // Draw rotated squares
@@ -1042,8 +1202,36 @@ function App() {
                   step="0.1"
                 />
               </div>
+              <div className="input-group">
+                <label>Pos X:</label>
+                <input
+                  type="number"
+                  value={initialPosA.x}
+                  onChange={(e) =>
+                    setInitialPosA((prev) => ({
+                      ...prev,
+                      x: Number(e.target.value),
+                    }))
+                  }
+                  disabled={isRunning}
+                />
+              </div>
+              <div className="input-group">
+                <label>Pos Y:</label>
+                <input
+                  type="number"
+                  value={initialPosA.y}
+                  onChange={(e) =>
+                    setInitialPosA((prev) => ({
+                      ...prev,
+                      y: Number(e.target.value),
+                    }))
+                  }
+                  disabled={isRunning}
+                />
+              </div>
             </div>
-            
+
             <div className="square-controls">
               <h3 className="red-text">Square B (Red)</h3>
               <div className="input-group">
@@ -1076,9 +1264,37 @@ function App() {
                   step="0.1"
                 />
               </div>
+              <div className="input-group">
+                <label>Pos X:</label>
+                <input
+                  type="number"
+                  value={initialPosB.x}
+                  onChange={(e) =>
+                    setInitialPosB((prev) => ({
+                      ...prev,
+                      x: Number(e.target.value),
+                    }))
+                  }
+                  disabled={isRunning}
+                />
+              </div>
+              <div className="input-group">
+                <label>Pos Y:</label>
+                <input
+                  type="number"
+                  value={initialPosB.y}
+                  onChange={(e) =>
+                    setInitialPosB((prev) => ({
+                      ...prev,
+                      y: Number(e.target.value),
+                    }))
+                  }
+                  disabled={isRunning}
+                />
+              </div>
             </div>
           </div>
-          
+
           <div className="button-container">
             {!isRunning ? (
               <>
@@ -1095,7 +1311,7 @@ function App() {
               </button>
             )}
           </div>
-        </div>        
+        </div>
       </header>
     </div>
   );
