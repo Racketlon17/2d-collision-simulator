@@ -18,6 +18,7 @@ const useDebounce = (value, delay) => {
 };
 
 function App() {
+  const [restitutionCoeff, setRestitutionCoeff] = useState(1);
   const [canvasWidth, setCanvasWidth] = useState(1200);
   const [canvasHeight, setCanvasHeight] = useState(800);
   
@@ -489,7 +490,7 @@ function App() {
       if (velAlongNormal > 0) return;
       
       // Coefficient of restitution
-      const e = 1; // Nearly perfectly elastic collision (0 would be inelastic)
+      const e = restitutionCoeff;
       
       // Calculate impulse scalar
       const impulseScalar = (-(1 + e) * velAlongNormal) / (1/squareA.mass + 1/squareB.mass);
@@ -1004,14 +1005,31 @@ function App() {
         <div className="simulation-area">
           {/* Top simulation controls */}
           <div className="simulation-controls">
+            <div className="slider-container">
+              <label htmlFor="restitution-slider" className="speed-label">
+                <span>Restitution Coefficient (e): {restitutionCoeff.toFixed(3)}</span>
+                <div className="slider-container">
+                  <input
+                    type="range"
+                    id="restitution-slider"
+                    min="0"
+                    max="1"
+                    step="0.001"
+                    value={restitutionCoeff}
+                    onChange={(e) => setRestitutionCoeff(parseFloat(e.target.value))}
+                    className="restitution-slider"
+                  />
+                </div>
+              </label>
+            </div>
             <div className="toggle-container">
               <label htmlFor="friction-toggle" className="toggle-label">
                 <span className={frictionedWalls ? "active-text" : ""}>Frictioned Walls</span>
                 <div className="toggle-switch">
-                  <input 
-                    type="checkbox" 
-                    id="friction-toggle" 
-                    checked={frictionedWalls} 
+                  <input
+                    type="checkbox"
+                    id="friction-toggle"
+                    checked={frictionedWalls}
                     onChange={() => setFrictionedWalls(!frictionedWalls)}
                   />
                   <span className="slider"></span>
