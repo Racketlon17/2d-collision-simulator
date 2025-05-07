@@ -18,6 +18,7 @@ const useDebounce = (value, delay) => {
 };
 
 function App() {
+  const [restitutionCoeff, setRestitutionCoeff] = useState(1);
   const [canvasWidth, setCanvasWidth] = useState(1200);
   const [canvasHeight, setCanvasHeight] = useState(800);
 
@@ -98,9 +99,108 @@ function App() {
     );
   };
 
-  const squareARef = useRef({
+  // Drag and drop position states
+  const [initialPosA, setInitialPosA] = useState({
     x: canvasWidth / 4,
-    y: canvasHeight / 2 - getSquareSize(10) / 2,
+    y: canvasHeight / 2 - getSquareSize(massA) / 2,
+  });
+  const [initialPosB, setInitialPosB] = useState({
+    x: (canvasWidth * 3) / 4 - getSquareSize(massB),
+    y: canvasHeight / 2 - getSquareSize(massB) / 2,
+  });
+  const draggingRef = useRef(null); // Which square is being dragged currently
+  const dragOffset = useRef({ x: 0, y: 0 }); // So that square doesn't jump to align its top left corner under the mouse when clicked
+
+  // Helper function to redraw canvas
+  const redraw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    drawRotatedSquare(ctx, squareARef.current);
+    drawRotatedSquare(ctx, squareBRef.current);
+  }, [canvasWidth, canvasHeight]);
+
+  // Handles drag and drop positioning
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = () => canvas.getBoundingClientRect();
+    const getPos = (e) => {
+      const r = rect();
+      const scaleX = canvas.width / r.width;
+      const scaleY = canvas.height / r.height;
+      return {
+        x: (e.clientX - r.left) * scaleX,
+        y: (e.clientY - r.top) * scaleY,
+      };
+    };
+
+    // Helper function to check if the point the user selects is within the square
+    const isOver = (pos, square) =>
+      pos.x >= square.x &&
+      pos.x <= square.x + square.size &&
+      pos.y >= square.y &&
+      pos.y <= square.y + square.size;
+
+    function pointerDown(e) {
+      const p = getPos(e);
+      if (isOver(p, squareARef.current)) {
+        draggingRef.current = "A";
+        dragOffset.current = {
+          x: p.x - squareARef.current.x,
+          y: p.y - squareARef.current.y,
+        };
+      } else if (isOver(p, squareBRef.current)) {
+        draggingRef.current = "B";
+        dragOffset.current = {
+          x: p.x - squareBRef.current.x,
+          y: p.y - squareBRef.current.y,
+        };
+      }
+    }
+
+    function pointerMove(e) {
+      const which = draggingRef.current;
+      if (!which) return;
+
+      const p = getPos(e);
+      const newX = p.x - dragOffset.current.x;
+      const newY = p.y - dragOffset.current.y;
+
+      // Update both the ref (for drawing) and state (for manual input values)
+      if (which === "A") {
+        squareARef.current.x = newX;
+        squareARef.current.y = newY;
+        setInitialPosA({ x: newX, y: newY });
+      } else {
+        squareBRef.current.x = newX;
+        squareBRef.current.y = newY;
+        setInitialPosB({ x: newX, y: newY });
+      }
+
+      redraw();
+    }
+
+    function pointerUp() {
+      draggingRef.current = null;
+    }
+
+    canvas.addEventListener("pointerdown", pointerDown);
+    window.addEventListener("pointermove", pointerMove);
+    window.addEventListener("pointerup", pointerUp);
+
+    return () => {
+      canvas.removeEventListener("pointerdown", pointerDown);
+      window.removeEventListener("pointermove", pointerMove);
+      window.removeEventListener("pointerup", pointerUp);
+    };
+  }, [massA, massB, redraw]);
+
+  const squareARef = useRef({
+    x: initialPosA.x,
+    y: initialPosA.y,
     vx: 5,
     vy: 0,
     mass: 10,
@@ -111,8 +211,8 @@ function App() {
   });
 
   const squareBRef = useRef({
-    x: (canvasWidth * 3) / 4 - getSquareSize(10),
-    y: canvasHeight / 2 - getSquareSize(10) / 2,
+    x: initialPosB.x,
+    y: initialPosB.y,
     vx: -5,
     vy: 0,
     mass: 10,
@@ -121,6 +221,22 @@ function App() {
     angle: 0,
     angularVelocity: 0,
   });
+
+  // Updates squareARef's position when initialPosA is changed via parameters
+  useEffect(() => {
+    squareARef.current.x = initialPosA.x;
+    squareARef.current.y = initialPosA.y;
+
+    redraw();
+  }, [initialPosA, redraw]);
+
+  // Updates squareBRef's position when initialPosB is changed via parameters
+  useEffect(() => {
+    squareBRef.current.x = initialPosB.x;
+    squareBRef.current.y = initialPosB.y;
+
+    redraw();
+  }, [initialPosB, redraw]);
 
   // Live velocity display values
   const [liveVelocityA, setLiveVelocityA] = useState({
@@ -419,7 +535,7 @@ function App() {
       if (velAlongNormal > 0) return;
 
       // Coefficient of restitution
-      const e = 1; // Nearly perfectly elastic collision (0 would be inelastic)
+      const e = restitutionCoeff;
 
       // Calculate impulse scalar
       const impulseScalar =
@@ -745,11 +861,26 @@ function App() {
     // Scale factor to maintain proportion
     const scaleFactor = getScaleFactor();
 
+    // Default X and Y coordinates for Square A
+    const posXA = canvasWidth / 4;
     const posYA = canvasHeight / 2 - sizeA / 2;
+
+    // Default X and Y coordinates for Square B
+    const posXB = (canvasWidth * 3) / 4 - sizeB;
     const posYB = canvasHeight / 2 - sizeB / 2;
 
+    // Reset pos parameters
+    setInitialPosA({
+      x: posXA,
+      y: posYA,
+    });
+    setInitialPosB({
+      x: posXB,
+      y: posYB,
+    });
+
     squareARef.current = {
-      x: canvasWidth / 4,
+      x: posXA,
       y: posYA,
       vx: Number(velocityAX),
       vy: Number(velocityAY),
@@ -761,7 +892,7 @@ function App() {
     };
 
     squareBRef.current = {
-      x: (canvasWidth * 3) / 4 - sizeB,
+      x: posXB,
       y: posYB,
       vx: Number(velocityBX),
       vy: Number(velocityBY),
@@ -950,6 +1081,27 @@ function App() {
         <div className="simulation-area">
           {/* Top simulation controls */}
           <div className="simulation-controls">
+            <div className="slider-container">
+              <label htmlFor="restitution-slider" className="speed-label">
+                <span>
+                  Restitution Coefficient (e): {restitutionCoeff.toFixed(3)}
+                </span>
+                <div className="slider-container">
+                  <input
+                    type="range"
+                    id="restitution-slider"
+                    min="0"
+                    max="1"
+                    step="0.001"
+                    value={restitutionCoeff}
+                    onChange={(e) =>
+                      setRestitutionCoeff(parseFloat(e.target.value))
+                    }
+                    className="restitution-slider"
+                  />
+                </div>
+              </label>
+            </div>
             <div className="toggle-container">
               <label htmlFor="friction-toggle" className="toggle-label">
                 <span className={frictionedWalls ? "active-text" : ""}>
@@ -1160,6 +1312,34 @@ function App() {
                   step="0.1"
                 />
               </div>
+              <div className="input-group">
+                <label>Position X:</label>
+                <input
+                  type="number"
+                  value={initialPosA.x}
+                  onChange={(e) =>
+                    setInitialPosA((prev) => ({
+                      ...prev,
+                      x: Number(e.target.value),
+                    }))
+                  }
+                  disabled={isRunning}
+                />
+              </div>
+              <div className="input-group">
+                <label>Position Y:</label>
+                <input
+                  type="number"
+                  value={initialPosA.y}
+                  onChange={(e) =>
+                    setInitialPosA((prev) => ({
+                      ...prev,
+                      y: Number(e.target.value),
+                    }))
+                  }
+                  disabled={isRunning}
+                />
+              </div>
             </div>
 
             <div className="square-controls">
@@ -1192,6 +1372,34 @@ function App() {
                   onChange={(e) => setVelocityBY(e.target.value)}
                   disabled={isRunning}
                   step="0.1"
+                />
+              </div>
+              <div className="input-group">
+                <label>Position X:</label>
+                <input
+                  type="number"
+                  value={initialPosB.x}
+                  onChange={(e) =>
+                    setInitialPosB((prev) => ({
+                      ...prev,
+                      x: Number(e.target.value),
+                    }))
+                  }
+                  disabled={isRunning}
+                />
+              </div>
+              <div className="input-group">
+                <label>Position Y:</label>
+                <input
+                  type="number"
+                  value={initialPosB.y}
+                  onChange={(e) =>
+                    setInitialPosB((prev) => ({
+                      ...prev,
+                      y: Number(e.target.value),
+                    }))
+                  }
+                  disabled={isRunning}
                 />
               </div>
             </div>
