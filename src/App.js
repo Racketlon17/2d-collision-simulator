@@ -59,6 +59,7 @@ function App() {
   const debouncedSimulationSpeed = useDebounce(simulationSpeed, 50);
   const [isCanvasVisible, setIsCanvasVisible] = useState(true);
   const [showFps, setShowFps] = useState(true);
+  const [momentumTableExpanded, setMomentumTableExpanded] = useState(true);
 
   // Momentum tracking states
   const [momentumBeforeA, setMomentumBeforeA] = useState({
@@ -698,7 +699,7 @@ function App() {
       frameTimeRef.current.lastLog = now;
     }
 
-    const fixedTimestep = 16.67; // 60 FPS equivalent in ms
+    const fixedTimestep = 8.33; // 120 FPS equivalent in ms
     requestRef.current.accumulatedTime += elapsed;
 
     const maxAccumulatedTime = fixedTimestep * 10;
@@ -772,6 +773,10 @@ function App() {
     canvasHeight,
     isCanvasVisible,
   ]);
+
+  const toggleMomentumTable = () => {
+    setMomentumTableExpanded(!momentumTableExpanded);
+  };
 
   const startSimulation = () => {
     console.log("Starting simulation");
@@ -1201,78 +1206,106 @@ function App() {
           </div>
 
           {/* Momentum display */}
-          <div className="momentum-display">
-            <h3>
-              Momentum Values{" "}
-              {collisionCount > 0 ? `(Collision #${collisionCount})` : ""}
-            </h3>
-            <div className="momentum-table">
-              <div className="momentum-header">
-                <div className="momentum-cell"></div>
-                <div className="momentum-cell">Before Collision</div>
-                <div className="momentum-cell">After Collision</div>
-              </div>
-              <div className="momentum-row">
-                <div className="momentum-cell blue-text">Square A (X)</div>
-                <div className="momentum-cell">
-                  {formatMomentum(momentumBeforeA.x)}
+          <div className={`momentum-display ${momentumTableExpanded ? 'expanded' : 'collapsed'}`}>
+            <div className="momentum-header-container">
+              <h3>
+                Momentum Values {collisionCount > 0 ? `(Collision #${collisionCount})` : ""}
+              </h3>
+              <button 
+                className="momentum-toggle-button" 
+                onClick={toggleMomentumTable}
+                aria-label={momentumTableExpanded ? "Collapse momentum table" : "Expand momentum table"}
+              >
+                <svg 
+                  className="toggle-icon" 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 24 24" 
+                  width="24" 
+                  height="24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  {momentumTableExpanded ? (
+                    <polyline points="18 15 12 9 6 15"></polyline>
+                  ) : (
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  )}
+                </svg>
+              </button>
+            </div>
+            
+            <div className={`momentum-table-wrapper ${momentumTableExpanded ? 'visible' : 'hidden'}`}>
+              <div className="momentum-table">
+                <div className="momentum-header">
+                  <div className="momentum-cell"></div>
+                  <div className="momentum-cell">Before Collision</div>
+                  <div className="momentum-cell">After Collision</div>
                 </div>
-                <div className="momentum-cell">
-                  {formatMomentum(momentumAfterA.x)}
+                <div className="momentum-row">
+                  <div className="momentum-cell blue-text">Square A (X)</div>
+                  <div className="momentum-cell">
+                    {formatMomentum(momentumBeforeA.x)}
+                  </div>
+                  <div className="momentum-cell">
+                    {formatMomentum(momentumAfterA.x)}
+                  </div>
                 </div>
-              </div>
-              <div className="momentum-row">
-                <div className="momentum-cell blue-text">Square A (Y)</div>
-                <div className="momentum-cell">
-                  {formatMomentum(momentumBeforeA.y)}
+                <div className="momentum-row">
+                  <div className="momentum-cell blue-text">Square A (Y)</div>
+                  <div className="momentum-cell">
+                    {formatMomentum(momentumBeforeA.y)}
+                  </div>
+                  <div className="momentum-cell">
+                    {formatMomentum(momentumAfterA.y)}
+                  </div>
                 </div>
-                <div className="momentum-cell">
-                  {formatMomentum(momentumAfterA.y)}
+                <div className="momentum-row">
+                  <div className="momentum-cell blue-text">Square A (Total)</div>
+                  <div className="momentum-cell">
+                    {formatMomentum(momentumBeforeA.total)}
+                  </div>
+                  <div className="momentum-cell">
+                    {formatMomentum(momentumAfterA.total)}
+                  </div>
                 </div>
-              </div>
-              <div className="momentum-row">
-                <div className="momentum-cell blue-text">Square A (Total)</div>
-                <div className="momentum-cell">
-                  {formatMomentum(momentumBeforeA.total)}
+                <div className="momentum-row">
+                  <div className="momentum-cell red-text">Square B (X)</div>
+                  <div className="momentum-cell">
+                    {formatMomentum(momentumBeforeB.x)}
+                  </div>
+                  <div className="momentum-cell">
+                    {formatMomentum(momentumAfterB.x)}
+                  </div>
                 </div>
-                <div className="momentum-cell">
-                  {formatMomentum(momentumAfterA.total)}
+                <div className="momentum-row">
+                  <div className="momentum-cell red-text">Square B (Y)</div>
+                  <div className="momentum-cell">
+                    {formatMomentum(momentumBeforeB.y)}
+                  </div>
+                  <div className="momentum-cell">
+                    {formatMomentum(momentumAfterB.y)}
+                  </div>
                 </div>
-              </div>
-              <div className="momentum-row">
-                <div className="momentum-cell red-text">Square B (X)</div>
-                <div className="momentum-cell">
-                  {formatMomentum(momentumBeforeB.x)}
+                <div className="momentum-row">
+                  <div className="momentum-cell red-text">Square B (Total)</div>
+                  <div className="momentum-cell">
+                    {formatMomentum(momentumBeforeB.total)}
+                  </div>
+                  <div className="momentum-cell">
+                    {formatMomentum(momentumAfterB.total)}
+                  </div>
                 </div>
-                <div className="momentum-cell">
-                  {formatMomentum(momentumAfterB.x)}
-                </div>
-              </div>
-              <div className="momentum-row">
-                <div className="momentum-cell red-text">Square B (Y)</div>
-                <div className="momentum-cell">
-                  {formatMomentum(momentumBeforeB.y)}
-                </div>
-                <div className="momentum-cell">
-                  {formatMomentum(momentumAfterB.y)}
-                </div>
-              </div>
-              <div className="momentum-row">
-                <div className="momentum-cell red-text">Square B (Total)</div>
-                <div className="momentum-cell">
-                  {formatMomentum(momentumBeforeB.total)}
-                </div>
-                <div className="momentum-cell">
-                  {formatMomentum(momentumAfterB.total)}
-                </div>
-              </div>
-              <div className="momentum-row total-row">
-                <div className="momentum-cell">Total System Momentum</div>
-                <div className="momentum-cell">
-                  {formatMomentum(totalMomentumBefore)}
-                </div>
-                <div className="momentum-cell">
-                  {formatMomentum(totalMomentumAfter)}
+                <div className="momentum-row total-row">
+                  <div className="momentum-cell">Total System Momentum</div>
+                  <div className="momentum-cell">
+                    {formatMomentum(totalMomentumBefore)}
+                  </div>
+                  <div className="momentum-cell">
+                    {formatMomentum(totalMomentumAfter)}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1436,4 +1469,4 @@ function App() {
   );
 }
 
-export default App;
+export default App; 

@@ -556,7 +556,7 @@ canvas {
   transform: translateZ(0);
 }
 
-/* Improved momentum display for better responsiveness */
+/* Enhanced styles for the collapsible momentum table */
 .momentum-display {
   width: 100%;
   max-width: 800px;
@@ -567,18 +567,96 @@ canvas {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-  overflow-x: auto; /* Add horizontal scroll for very small screens */
+  overflow: hidden;
   box-sizing: border-box;
+  transition: all 0.35s ease-in-out;
+  position: relative;
+}
+
+.momentum-display.collapsed {
+  max-height: 70px;
+  padding-bottom: 10px;
+}
+
+.momentum-display.expanded {
+  max-height: 1000px;
+}
+
+.momentum-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 2;
 }
 
 .momentum-display h3 {
   text-align: center;
-  margin: 0 0 15px;
+  margin: 0;
   font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: #38bdf8;
+  flex: 1;
+}
+
+.momentum-toggle-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #38bdf8;
+  transition: all 0.2s ease;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.momentum-toggle-button:hover {
+  background-color: rgba(56, 189, 248, 0.15);
+  transform: scale(1.1);
+}
+
+.momentum-toggle-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4);
+}
+
+.toggle-icon {
+  transition: transform 0.3s ease;
+  width: 20px;
+  height: 20px;
+}
+
+.collapsed .toggle-icon {
+  transform: rotate(180deg);
+}
+
+.momentum-table-wrapper {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  transform-origin: top center;
+}
+
+.momentum-table-wrapper.visible {
+  opacity: 1;
+  transform: translateY(0);
+  max-height: 600px;
+  margin-top: 15px;
+}
+
+.momentum-table-wrapper.hidden {
+  opacity: 0;
+  transform: translateY(-20px);
+  max-height: 0;
+  margin-top: 0;
 }
 
 .momentum-table {
@@ -731,6 +809,15 @@ canvas {
   h2 {
     font-size: 22px;
   }
+  
+  .momentum-display.collapsed {
+    max-height: 60px;
+  }
+  
+  .momentum-toggle-button {
+    width: 28px;
+    height: 28px;
+  }
 }
 
 /* Media query for smaller tablets */
@@ -779,6 +866,24 @@ canvas {
   
   button {
     width: 100%;
+  }
+  
+  .momentum-display.collapsed {
+    max-height: 60px;
+  }
+  
+  .momentum-toggle-button {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .toggle-icon {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .momentum-display h3 {
+    font-size: 16px;
   }
 }
 
@@ -859,6 +964,21 @@ canvas {
   .velocity-display h4 {
     font-size: 14px;
     margin-bottom: 8px;
+  }
+  
+  .momentum-display.collapsed {
+    max-height: 50px;
+    padding: 10px;
+  }
+  
+  .momentum-toggle-button {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .toggle-icon {
+    width: 16px;
+    height: 16px;
   }
 }
 
