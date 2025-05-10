@@ -486,6 +486,51 @@ function App() {
     }
   };
 
+  const checkStuckObjects = () => {
+    const squareA = squareARef.current;
+    const squareB = squareBRef.current;
+    
+    // If restitution is near zero and objects are very close to each other
+    if (restitutionCoeff < 0.01) {
+      // Calculate centers
+      const centerAX = squareA.x + squareA.size / 2;
+      const centerAY = squareA.y + squareA.size / 2;
+      const centerBX = squareB.x + squareB.size / 2;
+      const centerBY = squareB.y + squareB.size / 2;
+      
+      // Calculate distance between centers
+      const dx = centerBX - centerAX;
+      const dy = centerBY - centerAY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // If they're very close to the minimum distance (just touching)
+      const minDistance = (squareA.size + squareB.size) / 2;
+      const tolerance = 0.1; // Small tolerance value
+      
+      if (Math.abs(distance - minDistance) < tolerance) {
+        // Check if velocities are very small but not zero
+        const relativeVelocity = Math.sqrt(
+          Math.pow(squareB.vx - squareA.vx, 2) + 
+          Math.pow(squareB.vy - squareA.vy, 2)
+        );
+        
+        // If they're barely moving relative to each other
+        if (relativeVelocity < 0.1) {
+          // They're effectively stuck together, so force them to completely stop
+          squareA.vx = 0;
+          squareA.vy = 0;
+          squareB.vx = 0;
+          squareB.vy = 0;
+          squareA.angularVelocity = 0;
+          squareB.angularVelocity = 0;
+          return true; // Return true to indicate objects were stuck and fixed
+        }
+      }
+    }
+    
+    return false; // No stuck objects detected
+  };
+
   const checkCollision = () => {
     const squareA = squareARef.current;
     const squareB = squareBRef.current;
@@ -496,6 +541,15 @@ function App() {
     const centerBX = squareB.x + squareB.size / 2;
     const centerBY = squareB.y + squareB.size / 2;
 
+    // Calculate distance between centers
+    const dx = centerBX - centerAX;
+    const dy = centerBY - centerAY;
+    const distanceSquared = dx * dx + dy * dy;
+    
+    // Square sizes and distances for checking exact contact
+    const halfSizeA = squareA.size / 2;
+    const halfSizeB = squareB.size / 2;
+    
     // Check for collision using AABB
     if (
       squareA.x < squareB.x + squareB.size &&
@@ -504,128 +558,176 @@ function App() {
       squareA.y + squareA.size > squareB.y
     ) {
       const currentTime = performance.now();
-      if (currentTime - lastCollisionTimeRef.current < 50) {
-        return;
-      }
-
-      // Calculate momentum before collision
-      const momentumA = calculateMomentum(squareA);
-      const momentumB = calculateMomentum(squareB);
-
-      // Save momentum before collision
-      setMomentumBeforeA(momentumA);
-      setMomentumBeforeB(momentumB);
-      setTotalMomentumBefore(momentumA.total + momentumB.total);
-
-      const dx = centerBX - centerAX;
-      const dy = centerBY - centerAY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      // Normal vector pointing from A to B
-      const nx = dx / distance;
-      const ny = dy / distance;
-
-      // Relative velocity
-      const dvx = squareB.vx - squareA.vx;
-      const dvy = squareB.vy - squareA.vy;
-
-      // Velocity along normal
-      const velAlongNormal = dvx * nx + dvy * ny;
-
-      // Only resolve if objects are moving toward each other
-      if (velAlongNormal > 0) return;
-
-      // Coefficient of restitution
-      const e = restitutionCoeff;
-
-      // Calculate impulse scalar
-      const impulseScalar =
-        (-(1 + e) * velAlongNormal) / (1 / squareA.mass + 1 / squareB.mass);
-
-      // Apply impulse to linear velocities
-      squareA.vx -= (impulseScalar * nx) / squareA.mass;
-      squareA.vy -= (impulseScalar * ny) / squareA.mass;
-      squareB.vx += (impulseScalar * nx) / squareB.mass;
-      squareB.vy += (impulseScalar * ny) / squareB.mass;
-
-      // Calculate moments of inertia
-      const inertiaA = calculateMomentOfInertia(squareA.mass, squareA.size);
-      const inertiaB = calculateMomentOfInertia(squareB.mass, squareB.size);
-
-      // Tangent vector (perpendicular to normal)
-      const perpX = -ny;
-      const perpY = nx;
-
-      // Velocity component along tangent
-      const tangentialVelocity = dvx * perpX + dvy * perpY;
-
-      const overlapX =
-        Math.min(squareA.x + squareA.size, squareB.x + squareB.size) -
-        Math.max(squareA.x, squareB.x);
-      const overlapY =
-        Math.min(squareA.y + squareA.size, squareB.y + squareB.size) -
-        Math.max(squareA.y, squareB.y);
-
-      const contactX = Math.max(squareA.x, squareB.x) + overlapX / 2;
-      const contactY = Math.max(squareA.y, squareB.y) + overlapY / 2;
-
-      // Calculate r vectors (from center to contact point)
-      const rAx = contactX - centerAX;
-      const rAy = contactY - centerAY;
-      const rBx = contactX - centerBX;
-      const rBy = contactY - centerBY;
-
-      // Calculate torque impulses
-      const torqueImpulseA =
-        rAx * (-impulseScalar * ny) - rAy * (-impulseScalar * nx);
-      const torqueImpulseB =
-        rBx * (impulseScalar * ny) - rBy * (impulseScalar * nx);
-
-      // Apply angular velocity changes based on torque and inertia
-      squareA.angularVelocity += torqueImpulseA / inertiaA;
-      squareB.angularVelocity += torqueImpulseB / inertiaB;
-
-      const frictionCoeff = 0.2;
-      squareA.angularVelocity +=
-        (-tangentialVelocity * frictionCoeff * Math.sqrt(squareA.mass)) /
-        inertiaA;
-      squareB.angularVelocity +=
-        (tangentialVelocity * frictionCoeff * Math.sqrt(squareB.mass)) /
-        inertiaB;
-
-      // Position correction to prevent sinking
-      const penetrationDepth = squareA.size / 2 + squareB.size / 2 - distance;
-      if (penetrationDepth > 0) {
-        // Correction percent
-        const percent = 0.4;
-        const correctionRatio = (percent * penetrationDepth) / distance;
-
-        // Weight correction by inverse mass
+      
+      // First, fix any existing overlap before processing the collision
+      const distance = Math.sqrt(distanceSquared);
+      const minDistance = squareA.size / 2 + squareB.size / 2;
+      
+      // Check if we need to apply immediate position correction
+      if (distance < minDistance) {
+        // Calculate normal vector
+        const nx = dx / (distance || 1); // Avoid division by zero
+        const ny = dy / (distance || 1);
+        
+        // Calculate overlap amount
+        const overlap = minDistance - distance;
+        
+        // Apply immediate position correction to prevent overlap
+        // Weight correction by mass
         const totalMass = squareA.mass + squareB.mass;
         const ratioA = squareB.mass / totalMass;
         const ratioB = squareA.mass / totalMass;
-
-        const correctionX = nx * correctionRatio;
-        const correctionY = ny * correctionRatio;
-
-        squareA.x -= correctionX * ratioA;
-        squareA.y -= correctionY * ratioA;
-        squareB.x += correctionX * ratioB;
-        squareB.y += correctionY * ratioB;
+        
+        // Apply a full (100%) correction to completely eliminate overlap
+        squareA.x -= nx * overlap * ratioA;
+        squareA.y -= ny * overlap * ratioA;
+        squareB.x += nx * overlap * ratioB;
+        squareB.y += ny * overlap * ratioB;
       }
-
-      // Calculate momentum after collision
-      const postMomentumA = calculateMomentum(squareA);
-      const postMomentumB = calculateMomentum(squareB);
-
-      // Save momentum after collision
-      setMomentumAfterA(postMomentumA);
-      setMomentumAfterB(postMomentumB);
-      setTotalMomentumAfter(postMomentumA.total + postMomentumB.total);
-
-      setCollisionCount((prevCount) => prevCount + 1);
-
-      lastCollisionTimeRef.current = currentTime;
+      
+      // Track distinct collisions with a collision state
+      // We'll consider it a new collision if:
+      // 1. Enough time has passed (based on cooldown)
+      // 2. The objects have separated and come back together
+      
+      // Cooldown time depends on restitution coefficient
+      const collisionCooldown = restitutionCoeff < 0.01 ? 300 : 200;
+      
+      // Check if this is a new collision or still part of the previous one
+      const isNewCollision = 
+        (currentTime - lastCollisionTimeRef.current > collisionCooldown) &&
+        !squareARef.current.inCollision;
+      
+      // Only proceed if this is a new collision or we haven't processed this specific collision yet
+      if (isNewCollision) {
+        // Normal vector pointing from A to B
+        const nx = dx / (distance || 1); // Avoid division by zero
+        const ny = dy / (distance || 1);
+        
+        // Calculate relative velocity
+        const dvx = squareB.vx - squareA.vx;
+        const dvy = squareB.vy - squareA.vy;
+        
+        // Velocity along normal
+        const velAlongNormal = dvx * nx + dvy * ny;
+        
+        // Only resolve if objects are moving toward each other
+        if (velAlongNormal > 1e-6) {
+          // Objects are moving apart, not a real collision
+          return;
+        }
+        
+        // Mark that we're in a collision state
+        squareARef.current.inCollision = true;
+        squareBRef.current.inCollision = true;
+        
+        // Calculate momentum before collision
+        const momentumA = calculateMomentum(squareA);
+        const momentumB = calculateMomentum(squareB);
+        
+        // Save momentum before collision
+        setMomentumBeforeA(momentumA);
+        setMomentumBeforeB(momentumB);
+        setTotalMomentumBefore(momentumA.total + momentumB.total);
+        
+        // Increment collision counter for a new collision
+        setCollisionCount((prevCount) => prevCount + 1);
+        
+        // Coefficient of restitution
+        const e = restitutionCoeff;
+        
+        if (e < 0.01) {
+          // For completely inelastic collisions (e ≈ 0)
+          // Calculate the combined velocity (conservation of momentum)
+          const totalMass = squareA.mass + squareB.mass;
+          const commonVelX = (squareA.mass * squareA.vx + squareB.mass * squareB.vx) / totalMass;
+          const commonVelY = (squareA.mass * squareA.vy + squareB.mass * squareB.vy) / totalMass;
+          
+          // Set both objects to move with the same velocity
+          squareA.vx = commonVelX;
+          squareA.vy = commonVelY;
+          squareB.vx = commonVelX;
+          squareB.vy = commonVelY;
+          
+          // Apply angular velocity changes
+          // Since the objects are moving together, reduce angular velocity
+          squareA.angularVelocity *= 0.8;
+          squareB.angularVelocity *= 0.8;
+        } else {
+          // Standard elastic collision with restitution
+          // Calculate impulse scalar
+          const impulseScalar =
+            (-(1 + e) * velAlongNormal) / (1 / squareA.mass + 1 / squareB.mass);
+          
+          // Apply impulse to linear velocities
+          squareA.vx -= (impulseScalar * nx) / squareA.mass;
+          squareA.vy -= (impulseScalar * ny) / squareA.mass;
+          squareB.vx += (impulseScalar * nx) / squareB.mass;
+          squareB.vy += (impulseScalar * ny) / squareB.mass;
+          
+          // Calculate moments of inertia
+          const inertiaA = calculateMomentOfInertia(squareA.mass, squareA.size);
+          const inertiaB = calculateMomentOfInertia(squareB.mass, squareB.size);
+          
+          // Tangent vector (perpendicular to normal)
+          const perpX = -ny;
+          const perpY = nx;
+          
+          // Velocity component along tangent
+          const tangentialVelocity = dvx * perpX + dvy * perpY;
+          
+          // Calculate contact point
+          const overlapX =
+            Math.min(squareA.x + squareA.size, squareB.x + squareB.size) -
+            Math.max(squareA.x, squareB.x);
+          const overlapY =
+            Math.min(squareA.y + squareA.size, squareB.y + squareB.size) -
+            Math.max(squareA.y, squareB.y);
+          
+          const contactX = Math.max(squareA.x, squareB.x) + overlapX / 2;
+          const contactY = Math.max(squareA.y, squareB.y) + overlapY / 2;
+          
+          // Calculate r vectors (from center to contact point)
+          const rAx = contactX - centerAX;
+          const rAy = contactY - centerAY;
+          const rBx = contactX - centerBX;
+          const rBy = contactY - centerBY;
+          
+          // Calculate torque impulses
+          const torqueImpulseA =
+            rAx * (-impulseScalar * ny) - rAy * (-impulseScalar * nx);
+          const torqueImpulseB =
+            rBx * (impulseScalar * ny) - rBy * (impulseScalar * nx);
+          
+          // Apply angular velocity changes based on torque and inertia
+          squareA.angularVelocity += torqueImpulseA / inertiaA;
+          squareB.angularVelocity += torqueImpulseB / inertiaB;
+          
+          const frictionCoeff = 0.2;
+          squareA.angularVelocity +=
+            (-tangentialVelocity * frictionCoeff * Math.sqrt(squareA.mass)) /
+            inertiaA;
+          squareB.angularVelocity +=
+            (tangentialVelocity * frictionCoeff * Math.sqrt(squareB.mass)) /
+            inertiaB;
+        }
+        
+        // Calculate momentum after collision
+        const postMomentumA = calculateMomentum(squareA);
+        const postMomentumB = calculateMomentum(squareB);
+        
+        // Save momentum after collision
+        setMomentumAfterA(postMomentumA);
+        setMomentumAfterB(postMomentumB);
+        setTotalMomentumAfter(postMomentumA.total + postMomentumB.total);
+        
+        // Update collision time
+        lastCollisionTimeRef.current = currentTime;
+      }
+    } else {
+      // No collision, reset collision state
+      squareARef.current.inCollision = false;
+      squareBRef.current.inCollision = false;
     }
   };
 
@@ -1089,9 +1191,9 @@ function App() {
             <div className="slider-container">
               <label htmlFor="restitution-slider" className="speed-label">
                 <span>
-                  Restitution Coefficient (e): {restitutionCoeff.toFixed(3)}
+                  RESTITUTION COEFFICIENT (E): {restitutionCoeff.toFixed(3)}
                 </span>
-                <div className="slider-container">
+                <div className="restitution-input-container">
                   <input
                     type="range"
                     id="restitution-slider"
@@ -1099,10 +1201,22 @@ function App() {
                     max="1"
                     step="0.001"
                     value={restitutionCoeff}
-                    onChange={(e) =>
-                      setRestitutionCoeff(parseFloat(e.target.value))
-                    }
+                    onChange={(e) => setRestitutionCoeff(parseFloat(e.target.value))}
                     className="restitution-slider"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.001"
+                    value={restitutionCoeff}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      if (value >= 0 && value <= 1) {
+                        setRestitutionCoeff(value);
+                      }
+                    }}
+                    className="restitution-number-input"
                   />
                 </div>
               </label>
@@ -1229,9 +1343,9 @@ function App() {
                   strokeLinejoin="round"
                 >
                   {momentumTableExpanded ? (
-                    <polyline points="18 15 12 9 6 15"></polyline>
-                  ) : (
                     <polyline points="6 9 12 15 18 9"></polyline>
+                  ) : (
+                    <polyline points="18 15 12 9 6 15"></polyline>
                   )}
                 </svg>
               </button>
